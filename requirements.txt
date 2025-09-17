@@ -1,13 +1,12 @@
 # Web Framework
 fastapi==0.104.1
 uvicorn==0.24.0
-pydantic==2.5.0
+pydantic-settings>=2.2,<3.0
 python-multipart==0.0.6
-
 # 데이터베이스
-sqlalchemy==2.0.23
-psycopg2-binary==2.9.9
-alembic==1.13.1
+SQLAlchemy>=2.0,<3.0
+PyMySQL>=1.1,<2.0
+aiomysql>=0.2.0,<1.0
 
 # 데이터 처리
 pandas==2.1.4
@@ -15,13 +14,13 @@ numpy==1.25.2
 
 # 유사도 서비스용
 scikit-learn==1.3.2
-sentence-transformers==2.2.2
+sentence-transformers>=3.0,<3.2
 nltk==3.8.1
 faiss-cpu==1.7.4
 
 # 난이도 서비스용 (AI/ML)
-torch==2.1.1
-transformers==4.36.0
+torch>=2.1,<3
+transformers>=4.41,<5
 tensorflow==2.15.0
 
 # 캐싱 및 큐
@@ -46,3 +45,5 @@ prometheus-client==0.19.0
 python-dotenv==1.0.0
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
+Jinja2==3.1.2
+rapidfuzz>=3.6,<4.0
