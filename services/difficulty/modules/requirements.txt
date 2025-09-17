@@ -1,0 +1,34 @@
+# 속담 게임 - 난이도 판별 기능 전용 패키지 목록
+# jhgan/ko-sroberta-multitask 모델을 사용한 속담 난이도 분석 시스템
+# 설치 명령어: pip install -r requirements.txt
+
+# 핵심 AI 모델 라이브러리 (jhgan/ko-sroberta-multitask 전용)
+torch>=2.0.0                    # PyTorch - AI 모델 실행 엔진
+transformers>=4.30.0            # Hugging Face Transformers - BERT 기반 모델 로딩
+sentence-transformers>=2.2.2   # 문장 임베딩 생성 및 속담 유사도 계산
+
+# 웹 프레임워크 (속담 게임 API 서버용)
+fastapi>=0.100.0               # FastAPI - 속담 난이도 API 서버
+uvicorn[standard]>=0.22.0      # ASGI 서버 - API 서버 실행
+
+# 데이터베이스 (속담 데이터 저장용)
+mysql-connector-python>=8.0.33 # MySQL 연결 - 속담 DB 접근
+sqlalchemy>=2.0.0              # ORM - 데이터베이스 모델링
+pymysql>=1.0.3                 # MySQL 클라이언트
+
+# 데이터 처리 (속담 텍스트 분석용)
+numpy>=1.24.0                  # 수치 연산 - 임베딩 벡터 처리
+pandas>=2.0.0                  # 데이터 프레임 - 속담 데이터 관리
+scikit-learn>=1.3.0            # 머신러닝 도구 - 난이도 분류
+
+# 시스템 유틸리티
+python-dotenv>=1.0.0           # 환경 변수 관리
+pydantic>=2.0.0                # 데이터 검증 - API 입출력 검증
+requests>=2.31.0               # HTTP 클라이언트 - 외부 API 호출
+tqdm>=4.65.0                   # 진행률 표시 - 모델 로딩 진행상황
+psutil>=5.9.0                  # 시스템 모니터링 - 메모리 사용량 추적
+
+# 개발 및 테스트 도구
+pytest>=7.4.0                 # 테스트 프레임워크
+pytest-asyncio>=0.21.0        # 비동기 테스트
+black>=23.0.0                  # 코드 포맷터
