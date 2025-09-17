@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>속담 마스터 - 랭킹</title>
+  <link rel="stylesheet" href="./css/index.css">
+</head>
+<body>
+  <div class="bg-decorations">
+    <div class="particle"></div><div class="particle"></div><div class="particle"></div><div class="particle"></div><div class="particle"></div>
+  </div>
+
+  <div class="container">
+    <nav class="top-nav">
+      <div class="nav-title">🧠 속담 마스터</div>
+      <div class="nav-mode">🏆 랭킹</div>
+      <a class="nav-mode" href="./index.html">▶️ 플레이</a>
+    </nav>
+
+    <div class="leader-card">
+      <div class="leader-header">
+        <div class="leader-title">🏆 글로벌 랭킹</div>
+        <div class="leader-actions">
+          <a href="./index.html">다시 플레이</a>
+        </div>
+      </div>
+
+      <div id="lastSavedNotice" class="desc" style="margin-bottom:10px; display:none;"></div>
+
+      <div class="table-wrap">
+        <table class="leader-table">
+          <thead>
+            <tr>
+              <th style="width:80px;">순위</th>
+              <th>이름(ID)</th>
+              <th style="width:160px;">점수</th>
+              <th style="width:220px;">기록 시각</th>
+            </tr>
+          </thead>
+          <tbody id="leaderBody">
+            <tr><td colspan="4" class="empty">불러오는 중...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="version">v1.0</div>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="./static/rankings.js"></script>
+</body>
+</html>

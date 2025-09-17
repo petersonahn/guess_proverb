@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>속담 마스터 - 솔로 플레이</title>
+    <link rel="stylesheet" href="./css/index.css">
+</head>
+<body>
+    <!-- Animated background -->
+    <div class="bg-decorations">
+        <div class="particle"></div><div class="particle"></div><div class="particle"></div><div class="particle"></div><div class="particle"></div>
+    </div>
+
+    <div class="container">
+        <nav class="top-nav">
+            <div class="nav-title">🧠 속담 마스터</div>
+            <div class="nav-mode">✨ 솔로 플레이</div><a class="nav-mode" href="./rankings.html">🏆 랭킹</a>
+        </nav>
+
+        <div class="info-cards">
+            <div class="info-card">
+                <div class="info-icon player-icon">👤</div>
+                <div class="info-text">
+                    <div class="info-title">플레이어</div>
+                    <div class="info-details">
+                        <div class="info-left">
+                            <div class="info-subtitle">⭐ 레벨 3</div>
+                            <div class="info-subtitle">📊 정답률 85%</div>
+                        </div>
+                        <div class="info-right">
+                            <div class="current-score" id="currentScore">1,250</div>
+                            <div class="score-label">현재 점수</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="game-card">
+            <div class="game-header">
+                <h1 class="game-title">🎯 속담을 완성해보세요</h1>
+                <div class="progress-container">
+                    <div class="time-bar">
+                        <div class="time-fill" id="timeFill"></div>
+                    </div>
+                    <div class="time-text">
+                        <span>⏱️ 남은 시간: </span>
+                        <span id="timeDisplay">5:00</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="question-area">
+                <div class="question-text" id="questionText"></div>
+                <div class="input-container">
+                    <input type="text" class="answer-input" placeholder="정답을 입력하세요..." maxlength="20">
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn btn-hint">💡 힌트</button>
+                <button class="btn btn-submit">✅ 확인</button>
+                <button class="btn btn-reload">🔄 다시하기</button>
+            </div>
+
+            <div class="game-info">
+                <div class="info-item">
+                    <div class="info-icon-small">🎯</div>
+                    <div class="info-text-small">정답 개수: <span id="correctCount">0</span></div>
+                </div>
+                <div class="info-item">
+                    <div class="info-icon-small">📊</div>
+                    <div class="info-text-small">현재 연속: <span id="streakCount">0</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="version">v1.0</div>
+
+    <!-- jQuery (only) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="./static/index.js"></script>
+
+    <!-- Ranking Register Modal -->
+    <div class="modal-overlay" id="rankModal">
+      <div class="modal">
+        <div class="modal-header">
+          <div class="modal-title">⏰ 게임 종료</div>
+          <button class="modal-close" id="rankCloseBtn" title="닫기">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="score-box">최종 점수: <span id="finalScoreText">0</span>점</div>
+          <div class="desc">랭킹에 등록하시겠어요? 이름(또는 ID)을 입력해 저장할 수 있어요.</div>
+          <div class="input-row">
+            <input type="text" id="playerName" maxlength="20" placeholder="이름 또는 ID 입력" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" id="rankLaterBtn">나중에</button>
+          <button class="btn btn-primary" id="rankSaveBtn">🏆 랭킹 등록</button>
+        </div>
+      </div>
+    </div>
+
+</body>
+</html>
