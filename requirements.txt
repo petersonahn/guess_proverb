@@ -8,6 +8,7 @@ python-multipart==0.0.6
 sqlalchemy==2.0.23
 psycopg2-binary==2.9.9
 alembic==1.13.1
+mysql-connector-python
 
 # 데이터 처리
 pandas==2.1.4
@@ -21,7 +22,8 @@ faiss-cpu==1.7.4
 
 # 난이도 서비스용 (AI/ML)
 torch==2.1.1
-transformers==4.36.0
+transformers==4.35.2
+huggingface_hub==0.16.4
 tensorflow==2.15.0
 
 # 캐싱 및 큐
