@@ -571,7 +571,7 @@ def test_difficulty_analyzer():
             if result['difficulty_level'] > 0:
                 proverb_short = result['full_proverb'][:25] + "..." if len(result['full_proverb']) > 25 else result['full_proverb']
                 level_info = proverb_config.PROVERB_DIFFICULTY_LEVELS[result['difficulty_level']]
-                print(f"{result['proverb_id']:<4} {proverb_short:<30} {level_info['name']:<8} {result['score']:<4} {result['confidence']:.1%:<8}")
+                print(f"{result['proverb_id']:<4} {proverb_short:<30} {level_info['name']:<8} {result['score']:<4} {result['confidence']:.1%}")
         
         # 배치 크기 복원
         analyzer.batch_size = original_batch_size
