@@ -29,8 +29,16 @@ import logging
 
 # config 및 database 모듈 import
 try:
-    from config import proverb_config
-    from database import ProverbDatabase
+    import sys
+    import os
+    # 현재 파일의 부모 디렉토리들을 sys.path에 추가
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    parent_dir = os.path.dirname(current_dir)  # app 디렉토리
+    root_dir = os.path.dirname(parent_dir)     # 프로젝트 루트
+    sys.path.insert(0, root_dir)
+    
+    from app.core.config import proverb_config
+    from app.includes.dbconn import ProverbDatabase
 except ImportError as e:
     print(f"❌ 모듈 import 실패: {e}")
     sys.exit(1)

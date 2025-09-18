@@ -30,11 +30,19 @@ import numpy as np
 
 # config 및 database 모듈 import
 try:
-    from config import proverb_config
-    from database import ProverbDatabase
+    import sys
+    import os
+    # 현재 파일의 부모 디렉토리들을 sys.path에 추가
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    parent_dir = os.path.dirname(current_dir)  # app 디렉토리
+    root_dir = os.path.dirname(parent_dir)     # 프로젝트 루트
+    sys.path.insert(0, root_dir)
+    
+    from app.core.config import proverb_config
+    from app.includes.dbconn import ProverbDatabase
 except ImportError as e:
     print(f"❌ 모듈 import 실패: {e}")
-    print("해결 방법: config.py, database.py 파일이 같은 디렉토리에 있는지 확인하세요.")
+    print("해결 방법: config.py, dbconn.py 파일 경로를 확인하세요.")
     sys.exit(1)
 
 # 필수 라이브러리 import
@@ -240,14 +248,12 @@ class ProverbDifficultyAnalyzer:
             num_levels = len(self.reference_proverbs)
             return {level: 1.0/num_levels for level in self.reference_proverbs.keys()}
     
-    def analyze_proverb_difficulty(self, proverb_id: Optional[int] = None, 
-                                 proverb_text: Optional[str] = None) -> Dict[str, Any]:
+    def analyze_proverb_difficulty(self, proverb_id: int) -> Dict[str, Any]:
         """
-        🎯 속담의 난이도를 분석합니다.
+        🎯 데이터베이스 속담의 난이도를 분석합니다.
         
         Args:
-            proverb_id: 데이터베이스 속담 ID (우선순위)
-            proverb_text: 직접 입력한 속담 텍스트
+            proverb_id (int): 데이터베이스 속담 ID
             
         Returns:
             Dict: 난이도 분석 결과
@@ -264,42 +270,24 @@ class ProverbDifficultyAnalyzer:
         start_time = time.time()
         
         try:
-            # 1. 속담 데이터 준비
-            if proverb_id is not None:
-                # 데이터베이스에서 조회
-                proverb_data = self.db.get_proverb_by_id(proverb_id)
-                if not proverb_data:
-                    return {
-                        "proverb_id": proverb_id,
-                        "full_proverb": "",
-                        "difficulty_level": 0,
-                        "confidence": 0.0,
-                        "score": 0,
-                        "processing_time": time.time() - start_time,
-                        "message": f"속담 ID {proverb_id}를 찾을 수 없습니다"
-                    }
-                
-                full_proverb = proverb_data['full_proverb']
-                actual_proverb_id = proverb_data['id']
-                
-            elif proverb_text:
-                # 직접 입력된 텍스트 사용
-                full_proverb = proverb_text.strip()
-                actual_proverb_id = None
-                
-            else:
+            # 1. 데이터베이스에서 속담 조회
+            proverb_data = self.db.get_proverb_by_id(proverb_id)
+            if not proverb_data:
                 return {
-                    "proverb_id": None,
+                    "proverb_id": proverb_id,
                     "full_proverb": "",
                     "difficulty_level": 0,
                     "confidence": 0.0,
                     "score": 0,
                     "processing_time": time.time() - start_time,
-                    "message": "속담 ID 또는 텍스트를 입력해주세요"
+                    "message": f"속담 ID {proverb_id}를 찾을 수 없습니다"
                 }
             
+            full_proverb = proverb_data['full_proverb']
+            actual_proverb_id = proverb_data['id']
+            
             # 2. 캐시 확인
-            cache_key = f"id_{actual_proverb_id}" if actual_proverb_id else f"text_{hash(full_proverb)}"
+            cache_key = f"id_{actual_proverb_id}"
             
             if self.analysis_cache and cache_key in self.analysis_cache:
                 cached_result = self.analysis_cache[cache_key].copy()
@@ -539,10 +527,10 @@ def test_difficulty_analyzer():
             print(f"   신뢰도: {result1['confidence']:.1%}")
             print(f"   처리시간: {result1['processing_time']:.3f}초")
         
-        # 텍스트로 분석
-        result2 = analyzer.analyze_proverb_difficulty(proverb_text="호랑이도 제 말 하면 온다")
+        # 다른 ID로 분석
+        result2 = analyzer.analyze_proverb_difficulty(proverb_id=2)
         if result2['difficulty_level'] > 0:
-            print(f"\n✅ 텍스트 분석 성공:")
+            print(f"\n✅ 추가 분석 성공:")
             print(f"   속담: {result2['full_proverb']}")
             print(f"   난이도: {result2['difficulty_level']}단계 ({result2['score']}점)")
             print(f"   신뢰도: {result2['confidence']:.1%}")
@@ -571,7 +559,7 @@ def test_difficulty_analyzer():
             if result['difficulty_level'] > 0:
                 proverb_short = result['full_proverb'][:25] + "..." if len(result['full_proverb']) > 25 else result['full_proverb']
                 level_info = proverb_config.PROVERB_DIFFICULTY_LEVELS[result['difficulty_level']]
-                print(f"{result['proverb_id']:<4} {proverb_short:<30} {level_info['name']:<8} {result['score']:<4} {result['confidence']:.1%:<8}")
+                print(f"{result['proverb_id']:<4} {proverb_short:<30} {level_info['name']:<8} {result['score']:<4} {result['confidence']:.1%}")
         
         # 배치 크기 복원
         analyzer.batch_size = original_batch_size

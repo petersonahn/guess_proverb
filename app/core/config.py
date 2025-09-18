@@ -35,12 +35,12 @@ class ProverbDifficultyConfig:
     DEBUG: bool = os.getenv("DEBUG", "True").lower() == "true"
     
     # 현재 파일의 경로를 기준으로 프로젝트 루트 경로 설정
-    BASE_DIR: Path = Path(__file__).resolve().parent.parent
+    BASE_DIR: Path = Path(__file__).resolve().parent.parent.parent
     
     # ==================== 속담 AI 모델 설정 ====================
     # 🚨 중요: jhgan/ko-sroberta-multitask 모델만 사용 (다른 모델 절대 금지!)
     MODEL_NAME: str = "jhgan/ko-sroberta-multitask"  # 한국어 속담 분석 전용 모델
-    MODEL_CACHE_DIR: str = os.path.join(BASE_DIR, "proverb_models", "cache")  # 속담 모델 캐시
+    MODEL_CACHE_DIR: str = os.path.join(BASE_DIR, "app", "includes", "proverb_models", "cache")  # 속담 모델 캐시
     
     # GPU/CPU 자동 감지 (속담 분석 최적화)
     DEVICE: str = "cuda" if torch.cuda.is_available() else "cpu"
