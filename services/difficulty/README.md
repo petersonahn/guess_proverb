@@ -6,7 +6,7 @@
 
 - **🎮 게임 방식**: 속담 절반을 주고 나머지 속담을 맞추는 게임
 - **🤖 AI 기능**: 속담의 난이도를 자동 판별하여 점수 차등 지급
-- **📊 점수 시스템**: 난이도별 점수 배율 적용 (쉬움 1x ~ 최고난이도 3x)
+- **📊 점수 시스템**: 3단계 난이도별 점수 (쉬움 1점, 보통 2점, 어려움 3점)
 - **🎯 전용 모델**: jhgan/ko-sroberta-multitask 모델만 사용
 
 ## 🚨 중요 사항
@@ -20,39 +20,34 @@
 
 ```
 services/difficulty/
-├── modules/                    # 핵심 모듈
-│   ├── requirements.txt       # 필수 패키지 목록
-│   ├── config.py             # 속담 게임 전용 설정
-│   └── model_test.py         # AI 모델 테스트 스크립트
-├── api/                       # REST API 엔드포인트
-├── tests/                     # 단위 테스트
-├── docs/                      # 문서화
-└── README.md                 # 이 파일
+├── modules/                         # 핵심 모듈
+│   ├── requirements.txt            # 필수 패키지 목록
+│   ├── config.py                   # 속담 게임 전용 설정 (DB: root/0000)
+│   ├── database.py                 # MySQL 데이터베이스 연결 관리
+│   ├── difficulty_analyzer.py      # 데이터베이스 연동 난이도 분석 클래스
+│   ├── utils.py                    # 유틸리티 함수들
+│   └── model_test.py               # AI 모델 테스트 스크립트
+├── proverb_models/                  # AI 모델 캐시 저장소
+│   └── cache/                      # jhgan/ko-sroberta-multitask 모델
+├── exports/                        # 분석 결과 내보내기 폴더
+├── api/                            # REST API 엔드포인트
+├── tests/                          # 단위 테스트
+├── docs/                           # 문서화
+└── README.md                      # 이 파일
 ```
 
 ## 🎮 속담 난이도 시스템
 
-### 난이도 레벨 (5단계)
+### 난이도 레벨 (3단계)
 
-1. **🟢 쉬움 (1x)**: 일상적이고 잘 알려진 속담
+1. **🟢 쉬움 (1점)**: 일상적이고 잘 알려진 속담
    - 예시: "가는 말이 고와야 오는 말이 곱다", "호랑이도 제 말 하면 온다"
-   - 기본 점수: 100점
 
-2. **🔵 보통 (1.5x)**: 어느 정도 알려진 일반적인 속담
-   - 예시: "백문이 불여일견", "천리 길도 한 걸음부터"
-   - 기본 점수: 150점
+2. **🟡 보통 (2점)**: 어느 정도 알려진 일반적인 속담
+   - 예시: "밤말은 새가 듣고 낮말은 쥐가 듣는다", "백문이 불여일견"
 
-3. **🟡 어려움 (2x)**: 교육받은 사람들이 아는 속담
-   - 예시: "금강산도 식후경", "낮말은 새가 듣고 밤말은 쥐가 듣는다"
-   - 기본 점수: 200점
-
-4. **🟠 매우 어려움 (2.5x)**: 전문적 지식이 필요한 속담
-   - 예시: "등잔 밑이 어둡다", "개천에서 용 난다"
-   - 기본 점수: 250점
-
-5. **🔴 최고 난이도 (3x)**: 고전 문학이나 역사적 배경 지식 필요
-   - 예시: "하늘이 무너져도 솟아날 구멍이 있다", "닭 쫓던 개 지붕 쳐다본다"
-   - 기본 점수: 300점
+3. **🔴 어려움 (3점)**: 복잡하거나 잘 알려지지 않은 속담
+   - 예시: "가자니 태산이요, 돌아서자니 숭산이라", "금강산도 식후경"
 
 ## 🚀 빠른 시작
 
@@ -85,6 +80,27 @@ python config.py
 python model_test.py
 ```
 
+### 4. 데이터베이스 연결 테스트
+
+```bash
+# MySQL 데이터베이스 연결 및 proverb 테이블 확인
+python database.py
+```
+
+### 5. 유틸리티 함수 테스트
+
+```bash
+# 텍스트 처리, 시스템 상태 등 유틸리티 테스트
+python utils.py
+```
+
+### 6. 속담 난이도 분석기 테스트
+
+```bash
+# 데이터베이스 연동 난이도 분석 (84개 속담 배치 처리)
+python difficulty_analyzer.py
+```
+
 ## 🧪 테스트 과정
 
 `model_test.py` 실행 시 다음 테스트가 수행됩니다:
@@ -109,7 +125,48 @@ python model_test.py
 
 5. **🎯 난이도 분석 시뮬레이션**
    - 실제 게임 상황 시뮬레이션
-   - 점수 계산 및 배율 적용 테스트
+   - 점수 계산 테스트
+
+## 🎯 데이터베이스 연동 속담 난이도 분석
+
+### ProverbDifficultyAnalyzer 사용법
+
+```python
+from difficulty_analyzer import ProverbDifficultyAnalyzer
+
+# 분석기 초기화 (데이터베이스 연결 + AI 모델 로딩)
+analyzer = ProverbDifficultyAnalyzer()
+
+# 데이터베이스 ID로 속담 분석
+result = analyzer.analyze_proverb_difficulty(proverb_id=1)
+
+# 직접 텍스트로 속담 분석
+result = analyzer.analyze_proverb_difficulty(proverb_text="가는 말이 고와야 오는 말이 곱다")
+
+# 전체 속담 배치 분석 (16개씩 묶어서 처리)
+all_results = analyzer.batch_analyze_all_proverbs()
+```
+
+### 분석 결과 형식
+
+```python
+{
+    "proverb_id": 1,
+    "full_proverb": "가는 말이 고와야 오는 말이 곱다", 
+    "difficulty_level": 2,
+    "confidence": 0.85,
+    "score": 2,
+    "processing_time": 0.15,
+    "message": "분석 완료"
+}
+```
+
+### 배치 처리 특징
+
+- **메모리 최적화**: 16개씩 묶어서 처리하여 대용량 데이터 안전 처리
+- **캐싱 시스템**: 한 번 분석한 결과를 메모리에 저장하여 재분석 방지  
+- **진행률 표시**: tqdm을 사용한 실시간 진행상황 모니터링
+- **성능 통계**: 처리 시간, 캐시 적중률 등 상세 통계 제공
 
 ## 📊 데이터베이스 연동
 
