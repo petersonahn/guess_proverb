@@ -37,6 +37,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .btn{ padding:15px 30px; border:none; border-radius:25px; font-size:16px; font-weight:600; cursor:pointer; }
 .btn-hint{ background:linear-gradient(135deg,#17a2b8,#0c7b8a); color:#fff; }
 .btn-submit{ background:linear-gradient(135deg,#28a745,#1e7e34); color:#fff; }
+.btn-reload{ background:linear-gradient(135deg,#ffdfb6,#ffbf47); color:#fff; }
 .game-info{ display:flex; justify-content:center; align-items:center; gap:40px; padding:20px; background:rgba(102,126,234,.05); border-radius:15px; border:1px solid rgba(102,126,234,.1); }
 .version{ position:fixed; bottom:30px; right:50%; transform:translateX(50%); width:60px; height:60px; border:2px solid rgba(255,255,255,.3); border-radius:50%; display:flex; align-items:center; justify-content:center; color:rgba(255,255,255,.8); }
 

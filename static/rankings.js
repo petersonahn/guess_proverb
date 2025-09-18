@@ -8,7 +8,7 @@ $(function(){
     try { return new Date(s).toLocaleString('ko-KR'); } catch(e){ return s; }
   }
 
-  $.getJSON('/api/users?limit=100')           // ✅ 변경: /api/leaderboard -> /api/users
+  $.getJSON('/api/users?limit=100')
     .done(function(list){
       var $body = $('#leaderBody');
       if (!list || !list.length){

@@ -3,6 +3,7 @@ $(function() {
   var $answerInput   = $('.answer-input');
   var $hintBtn       = $('.btn-hint');
   var $submitBtn     = $('.btn-submit');
+  var $reloadBtn  = $('.btn-reload');
   var $currentScore  = $('#currentScore');
   var $timeFill      = $('#timeFill');
   var $timeDisplay   = $('#timeDisplay');
@@ -16,7 +17,7 @@ $(function() {
   var streakCount  = 0;
   var currentIndex = 0;
 
-  var totalTime     = 60; // 1분
+  var totalTime     = 59; // 1분
   var remainingTime = totalTime;
   var timerInterval = null;
 
@@ -24,9 +25,11 @@ $(function() {
     if (!questions.length) return;
     currentIndex = idx;
     $questionText.text(questions[currentIndex].question + ' ______');
+    $reloadBtn.hide();
+    $answerInput.show();
+    $submitBtn.show();
+    $hintBtn.show();
     $answerInput.val('').prop('disabled', false);
-    $submitBtn.prop('disabled', false);
-    $hintBtn.prop('disabled', false);
     $answerInput.focus();
   }
 
@@ -41,7 +44,7 @@ $(function() {
     timerInterval = setInterval(function() {
       remainingTime--;
       updateTimeDisplay();
-      if (remainingTime <= 0) {
+      if (remainingTime <= -1) {
         clearInterval(timerInterval);
         gameOver();
       }
@@ -71,9 +74,11 @@ $(function() {
   function gameOver() {
     showCustomAlert('⏰ 시간 종료!', '게임이 끝났습니다!\n총 점수: ' + currentScore.toLocaleString() + '점\n정답 개수: ' + correctCount + '개', 'info');
     showRankModal(currentScore);
-    $answerInput.prop('disabled', true);
-    $submitBtn.prop('disabled', true);
-    $hintBtn.prop('disabled', true);
+    $timeDisplay.text("0:00");
+    $answerInput.hide();
+    $submitBtn.hide();
+    $hintBtn.hide();
+    $reloadBtn.show();
   }
 
   function updateScore(points) {
@@ -168,6 +173,9 @@ $(function() {
   $rankClose.on('click', hideRankModal);
   $rankLater.on('click', function(){ hideRankModal(); });
 
+  $reloadBtn.on('click', function(){
+    location.reload();
+  });
   $rankSave.on('click', function(){
     if (savingRank) return;
     var name = $.trim($playerName.val());
