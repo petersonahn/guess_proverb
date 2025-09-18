@@ -35,7 +35,8 @@ def get_threshold_by_length(answer):
         return 0.8
 
 def check_proverb(user_input, answers, threshold):
-    model = SentenceTransformer('jhgan/ko-sbert-nli')
+    # model = SentenceTransformer('jhgan/ko-sbert-nli')
+    model = SentenceTransformer('snunlp/KR-SBERT-V40K-klueNLI-augSTS')
     answer_embeddings = model.encode(answers)
     user_embedding = model.encode([user_input])[0]
     similarities = util.cos_sim(user_embedding, answer_embeddings)[0]

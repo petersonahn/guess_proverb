@@ -20,7 +20,7 @@
 - `docs/`: API 문서 및 알고리즘 설명서
 
 ## 기술 스택
-- FastAPI / Flask
+- FastAPI
 - NumPy, Pandas
 - scikit-learn, Sentence Transformers
 - Redis (캐싱)

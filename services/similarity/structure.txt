@@ -1,0 +1,79 @@
+C:.
+│  .gitignore
+│  README.md
+│  requirements.txt
+│
+├─app
+│  │  main.py
+│  │  init.py
+│  │
+│  ├─core
+│  │  │  config.py
+│  │  │  init.py
+│  │  │
+│  │  └─__pycache__
+│  │          config.cpython-310.pyc
+│  │          init.cpython-310.pyc
+│  │
+│  ├─includes
+│  │  │  dbconn.py
+│  │  │  init.py
+│  │  │
+│  │  └─__pycache__
+│  │          dbconn.cpython-310.pyc
+│  │          init.cpython-310.pyc
+│  │
+│  ├─models
+│  │  │  base.py
+│  │  │  proverb.py
+│  │  │  user.py
+│  │  │  init.py
+│  │  │
+│  │  └─__pycache__
+│  │          base.cpython-310.pyc
+│  │          leaderboard.cpython-310.pyc
+│  │          proverb.cpython-310.pyc
+│  │          user.cpython-310.pyc
+│  │          init.cpython-310.pyc
+│  │
+│  ├─routers
+│  │  │  health.py
+│  │  │  questions.py
+│  │  │  score.py
+│  │  │  users.py
+│  │  │  init.py
+│  │  │
+│  │  └─__pycache__
+│  │          health.cpython-310.pyc
+│  │          leaderboard.cpython-310.pyc
+│  │          questions.cpython-310.pyc
+│  │          score.cpython-310.pyc
+│  │          users.cpython-310.pyc
+│  │          init.cpython-310.pyc
+│  │
+│  ├─schemas
+│  │  │  proverb.py
+│  │  │  user.py
+│  │  │  init.py
+│  │  │
+│  │  └─__pycache__
+│  │          leaderboard.cpython-310.pyc
+│  │          proverb.cpython-310.pyc
+│  │          user.cpython-310.pyc
+│  │          init.cpython-310.pyc
+│  │
+│  └─__pycache__
+│          main.cpython-310.pyc
+│          init.cpython-310.pyc
+│
+├─css
+│      index.css
+│
+├─static
+│      index.js
+│      rankings.js
+│
+└─templates
+index.html
+layout.html
+rankings.html
