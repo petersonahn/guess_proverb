@@ -51,4 +51,5 @@ pip install -r requirements.txt
 각 서비스는 독립적으로 실행 가능하며, API Gateway를 통해 통합됩니다.
 
 ## 배포
+python -m uvicorn app.main:app --reload
 TBD (배포 방법은 추후 문서화 예정)
