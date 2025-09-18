@@ -353,8 +353,9 @@ class ProverbDifficultyTester:
             
             print("🎮 속담 게임 난이도별 점수 시스템:")
             for level, info in self.config.PROVERB_DIFFICULTY_LEVELS.items():
-                base_score = self.config.BASE_SCORE * info['score_multiplier']
-                print(f"  - {info['name']}: {base_score:.0f}점 (배율: {info['score_multiplier']}x)")
+                # BASE_SCORE 대신 직접 score 값 사용
+                score = info['score']  # 이미 config에 정의된 점수 사용
+                print(f"  - {info['name']}: {score}점")
                 print(f"    📝 {info['description']}")
                 print(f"    📚 예시: {info['examples'][0]}")
                 print()
@@ -366,15 +367,13 @@ class ProverbDifficultyTester:
             total_score = 0
             test_cases = [
                 ("가는 말이 고와야 오는 말이 곱다", 1),  # 쉬움
-                ("백문이 불여일견", 2),  # 보통
-                ("금강산도 식후경", 3),  # 어려움
-                ("등잔 밑이 어둡다", 4),  # 매우 어려움
-                ("하늘이 무너져도 솟아날 구멍이 있다", 5)  # 최고 난이도
+                ("백문이 불여일견", 2),                    # 보통
+                ("금강산도 식후경", 3),                   # 어려움
             ]
             
             for proverb, difficulty in test_cases:
                 level_info = self.config.PROVERB_DIFFICULTY_LEVELS[difficulty]
-                score = int(self.config.BASE_SCORE * level_info['score_multiplier'])
+                score = level_info['score']  # 직접 score 값 사용
                 total_score += score
                 
                 print(f"  📝 '{proverb}'")
