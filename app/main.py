@@ -1,20 +1,23 @@
 """
-🎯 속담 게임 - 최적화된 FastAPI 메인 애플리케이션
+🎯 속담 게임 - 하이브리드 분석 통합 FastAPI 애플리케이션
 
 AI 모델을 lazy loading으로 변경하여 서버 시작 시간을 단축합니다.
-- 난이도 측정 기능 (ProverbDifficultyAnalyzer) - Lazy Loading
+- 하이브리드 난이도 측정 기능 (언어학적 + AI 모델) - Lazy Loading
 - 정답 유사도 측정 기능 (similarity_check.py) - Lazy Loading  
 - 60초 제한시간 게임
 - 점수 시스템 (쉬움: 100점, 보통: 200점, 어려움: 300점)
 - 힌트 시스템 (10초 후 또는 1회 오답 시)
 - 랭킹 시스템
+- API 라우터 분리 구조
 
 주요 기능:
 1. 게임 시작/종료 API
-2. 문제 출제 API (난이도 기반)
+2. 문제 출제 API (하이브리드 난이도 기반)
 3. 정답 확인 API (유사도 측정)
 4. 힌트 제공 API
 5. 랭킹 저장/조회 API
+6. 속담 조회/검색 API
+7. 난이도 분석 API
 """
 
 import sys
@@ -109,7 +112,19 @@ game_sessions: Dict[str, GameSession] = {}
 # AI 모델들 (lazy loading으로 변경)
 difficulty_analyzer = None
 similarity_model = None
-proverb_db = None
+proverb_database = None
+
+# 분석 결과 캐시 (새로운 라우터에서 사용)
+analysis_cache: Dict[int, Dict[str, Any]] = {}
+
+# 서버 통계 (새로운 라우터에서 사용)
+server_stats = {
+    "startup_time": None,
+    "total_requests": 0,
+    "cache_hits": 0,
+    "analysis_count": 0,
+    "last_batch_analysis": None
+}
 
 # ==================== Lazy Loading 함수들 ====================
 
@@ -141,31 +156,79 @@ def get_similarity_model():
             raise
     return similarity_model
 
-def get_proverb_db():
+def get_proverb_database():
     """데이터베이스 연결을 lazy loading으로 가져옵니다."""
-    global proverb_db
-    if proverb_db is None:
+    global proverb_database
+    if proverb_database is None:
         print("⏳ 데이터베이스 연결 중...")
         try:
             from app.includes.dbconn import ProverbDatabase
-            proverb_db = ProverbDatabase()
+            proverb_database = ProverbDatabase()
             print("✅ 데이터베이스 연결 완료")
         except Exception as e:
             print(f"❌ 데이터베이스 연결 실패: {e}")
             raise
-    return proverb_db
+    return proverb_database
 
 # ==================== FastAPI 앱 생성 ====================
 
 app = FastAPI(
     title="🎯 속담 게임",
-    description="속담의 앞부분을 주고 뒷부분을 맞추는 게임 - 최적화 버전",
-    version="1.1.0"
+    description="""
+    ## 하이브리드 속담 난이도 분석 및 게임 시스템
+    
+    언어학적 특성과 AI 모델을 결합한 하이브리드 분석으로 속담의 난이도를 정확하게 측정하고,
+    60초 제한시간 게임을 제공하는 백엔드 시스템입니다.
+    
+    ### 주요 기능
+    - 🎮 60초 제한시간 속담 게임
+    - 🧠 하이브리드 난이도 분석 (언어학적 80% + AI 20%)
+    - 📚 속담 조회 및 검색 API
+    - 🏆 랭킹 시스템
+    - ⚡ 분석 결과 캐싱으로 빠른 응답
+    
+    ### 기술 스택
+    - **Backend**: FastAPI + Python
+    - **AI Model**: jhgan/ko-sroberta-multitask
+    - **Database**: MySQL (proverb_game)
+    - **Analysis**: 언어학적 분석 + 임베딩 특성 분석
+    """,
+    version="1.2.0"
 )
 
 # 정적 파일 및 템플릿 설정
-app.mount("/static", StaticFiles(directory="../static"), name="static")
-templates = Jinja2Templates(directory="../templates")
+import os
+static_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
+templates_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "templates")
+
+if os.path.exists(static_dir):
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
+if os.path.exists(templates_dir):
+    templates = Jinja2Templates(directory=templates_dir)
+else:
+    templates = None
+
+# 새로운 라우터들 등록
+try:
+    from app.routers import proverbs, analysis
+    
+    app.include_router(
+        proverbs.router, 
+        prefix="/api/v1", 
+        tags=["📚 속담 조회"],
+        responses={404: {"description": "Not found"}}
+    )
+    
+    app.include_router(
+        analysis.router, 
+        prefix="/api/v1", 
+        tags=["🤖 난이도 분석"],
+        responses={404: {"description": "Not found"}}
+    )
+    
+    print("✅ 새로운 API 라우터들 등록 완료")
+except ImportError as e:
+    print(f"⚠️ 새로운 라우터 import 실패: {e}")
 
 print("✅ FastAPI 서버 초기화 완료 (AI 모델은 필요할 때 로드됩니다)")
 
@@ -234,7 +297,7 @@ def generate_game_id() -> str:
 def get_random_question(used_ids: set = None) -> Optional[Dict[str, Any]]:
     """랜덤 문제를 가져옵니다."""
     try:
-        db = get_proverb_db()  # lazy loading
+        db = get_proverb_database()  # lazy loading
         
         if used_ids is None:
             used_ids = set()
@@ -295,17 +358,26 @@ def calculate_score(difficulty_level: int, hint_used: bool = False) -> int:
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
     """메인 페이지"""
-    return templates.TemplateResponse("main.html", {"request": request})
+    if templates:
+        return templates.TemplateResponse("main.html", {"request": request})
+    else:
+        return HTMLResponse("<h1>속담 게임 API 서버</h1><p><a href='/docs'>API 문서 보기</a></p>")
 
 @app.get("/game", response_class=HTMLResponse)
 async def game_page(request: Request):
     """게임 페이지"""
-    return templates.TemplateResponse("index.html", {"request": request})
+    if templates:
+        return templates.TemplateResponse("index.html", {"request": request})
+    else:
+        return HTMLResponse("<h1>게임 페이지</h1><p>템플릿 파일이 없습니다. <a href='/docs'>API 문서</a>를 참조하세요.</p>")
 
 @app.get("/rankings", response_class=HTMLResponse)
 async def rankings_page(request: Request):
     """랭킹 페이지"""
-    return templates.TemplateResponse("rankings.html", {"request": request})
+    if templates:
+        return templates.TemplateResponse("rankings.html", {"request": request})
+    else:
+        return HTMLResponse("<h1>랭킹 페이지</h1><p>템플릿 파일이 없습니다. <a href='/docs'>API 문서</a>를 참조하세요.</p>")
 
 @app.post("/api/game/start")
 async def start_game(request: GameStartRequest):
@@ -327,6 +399,10 @@ async def start_game(request: GameStartRequest):
         
         # 세션 저장
         game_sessions[game_id] = session
+        
+        # 서버 통계 초기화 (첫 게임 시작 시)
+        if server_stats["startup_time"] is None:
+            server_stats["startup_time"] = datetime.now().isoformat()
         
         print("✅ 게임 시작 완료!")
         

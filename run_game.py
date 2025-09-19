@@ -16,7 +16,7 @@ FastAPI 기반의 속담 게임 서버를 실행합니다.
     conda activate aa
     python run_game.py
 
-서버 주소: http://localhost:8001
+서버 주소: http://localhost:8080
 """
 
 import sys
