@@ -59,12 +59,12 @@ class ProverbDifficultyConfig:
     DB_HOST: str = os.getenv("DB_HOST", "localhost")
     DB_PORT: int = int(os.getenv("DB_PORT", "3306"))
     DB_USER: str = os.getenv("DB_USER", "root")
-    DB_PASSWORD: str = os.getenv("DB_PASSWORD", "0000")  # 데이터베이스 비밀번호
+    DB_PASSWORD: str = os.getenv("DB_PASSWORD", "root1234")  # 데이터베이스 비밀번호
     DB_NAME: str = os.getenv("DB_NAME", "proverb_game")  # 속담 게임 전용 DB
     
     # 속담 테이블 설정
     PROVERB_TABLE: str = "proverb"  # 속담 원문 저장 테이블
-    SCORE_TABLE: str = "user_scores"  # 사용자 점수 저장 테이블
+    SCORE_TABLE: str = "user"  # 사용자 점수 저장 테이블
     
     # 데이터베이스 연결 URL 생성
     @property
@@ -73,8 +73,8 @@ class ProverbDifficultyConfig:
         return f"mysql+pymysql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
     
     # ==================== API 서버 설정 ====================
-    API_HOST: str = os.getenv("API_HOST", "0.0.0.0")
-    API_PORT: int = int(os.getenv("API_PORT", "8001"))  # similarity 서비스와 포트 구분
+    API_HOST: str = os.getenv("API_HOST", "127.0.0.1")
+    API_PORT: int = int(os.getenv("API_PORT", "8080"))  # 포트 8080 사용
     API_RELOAD: bool = DEBUG  # 개발 모드에서만 자동 재로드
     
     # ==================== 속담 난이도 판별 시스템 설정 ====================
