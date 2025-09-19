@@ -35,12 +35,12 @@ class ProverbDifficultyConfig:
     DEBUG: bool = os.getenv("DEBUG", "True").lower() == "true"
     
     # 현재 파일의 경로를 기준으로 프로젝트 루트 경로 설정
-    BASE_DIR: Path = Path(__file__).resolve().parent.parent
+    BASE_DIR: Path = Path(__file__).resolve().parent.parent.parent
     
     # ==================== 속담 AI 모델 설정 ====================
     # 🚨 중요: jhgan/ko-sroberta-multitask 모델만 사용 (다른 모델 절대 금지!)
     MODEL_NAME: str = "jhgan/ko-sroberta-multitask"  # 한국어 속담 분석 전용 모델
-    MODEL_CACHE_DIR: str = os.path.join(BASE_DIR, "proverb_models", "cache")  # 속담 모델 캐시
+    MODEL_CACHE_DIR: str = os.path.join(BASE_DIR, "app", "includes", "proverb_models", "cache")  # 속담 모델 캐시
     
     # GPU/CPU 자동 감지 (속담 분석 최적화)
     DEVICE: str = "cuda" if torch.cuda.is_available() else "cpu"
@@ -49,9 +49,9 @@ class ProverbDifficultyConfig:
     MAX_SEQUENCE_LENGTH: int = 128  # 속담은 일반적으로 짧으므로 128로 설정
     BATCH_SIZE: int = 16 if DEVICE == "cuda" else 8  # 속담 배치 처리 크기
     
-    # 속담 분석 관련 설정
-    PROVERB_MIN_LENGTH: int = 5     # 최소 속담 길이
-    PROVERB_MAX_LENGTH: int = 50    # 최대 속담 길이
+    # 배치 처리 설정
+    BATCH_SIZE_ANALYSIS: int = 16   # 난이도 분석 배치 크기 (메모리 최적화)
+    ENABLE_CACHING: bool = True     # 분석 결과 캐싱 활성화
     
     # ==================== 속담 게임 데이터베이스 설정 ====================
     # MySQL 속담 게임 전용 데이터베이스 연결 정보
@@ -59,7 +59,7 @@ class ProverbDifficultyConfig:
     DB_HOST: str = os.getenv("DB_HOST", "localhost")
     DB_PORT: int = int(os.getenv("DB_PORT", "3306"))
     DB_USER: str = os.getenv("DB_USER", "root")
-    DB_PASSWORD: str = os.getenv("DB_PASSWORD", "your_password")  # 실제 비밀번호로 변경
+    DB_PASSWORD: str = os.getenv("DB_PASSWORD", "0000")  # 데이터베이스 비밀번호
     DB_NAME: str = os.getenv("DB_NAME", "proverb_game")  # 속담 게임 전용 DB
     
     # 속담 테이블 설정
@@ -78,44 +78,33 @@ class ProverbDifficultyConfig:
     API_RELOAD: bool = DEBUG  # 개발 모드에서만 자동 재로드
     
     # ==================== 속담 난이도 판별 시스템 설정 ====================
-    # 🎯 속담 게임 전용 난이도 레벨 정의
-    # 속담의 복잡성, 인지도, 사용 빈도를 기반으로 5단계 분류
+    # 🎯 속담 게임 전용 난이도 레벨 정의 (3단계)
+    # 속담의 복잡성, 인지도, 사용 빈도를 기반으로 3단계 분류
     PROVERB_DIFFICULTY_LEVELS: Dict[int, Dict] = {
         1: {
             "name": "🟢 쉬움", 
             "description": "일상적이고 잘 알려진 속담",
-            "score_multiplier": 1.0, 
+            "score": 1,
             "examples": ["가는 말이 고와야 오는 말이 곱다", "호랑이도 제 말 하면 온다"]
         },
         2: {
-            "name": "🔵 보통", 
+            "name": "🟡 보통", 
             "description": "어느 정도 알려진 일반적인 속담",
-            "score_multiplier": 1.5,
-            "examples": ["백문이 불여일견", "천리 길도 한 걸음부터"]
+            "score": 2,
+            "examples": ["밤말은 새가 듣고 낮말은 쥐가 듣는다", "백문이 불여일견"]
         },
         3: {
-            "name": "🟡 어려움", 
-            "description": "교육받은 사람들이 아는 속담",
-            "score_multiplier": 2.0,
-            "examples": ["금강산도 식후경", "낮말은 새가 듣고 밤말은 쥐가 듣는다"]
-        },
-        4: {
-            "name": "🟠 매우 어려움", 
-            "description": "전문적 지식이 필요한 속담",
-            "score_multiplier": 2.5,
-            "examples": ["등잔 밑이 어둡다", "개천에서 용 난다"]
-        },
-        5: {
-            "name": "🔴 최고 난이도", 
-            "description": "고전 문학이나 역사적 배경 지식이 필요한 속담",
-            "score_multiplier": 3.0,
-            "examples": ["하늘이 무너져도 솟아날 구멍이 있다", "닭 쫓던 개 지붕 쳐다본다"]
+            "name": "🔴 어려움", 
+            "description": "복잡하거나 잘 알려지지 않은 속담",
+            "score": 3,
+            "examples": ["가자니 태산이요, 돌아서자니 숭산이라", "금강산도 식후경"]
         }
     }
     
     # 속담 게임 점수 설정
-    BASE_SCORE: int = 100  # 기본 점수 (레벨 1 속담)
-    BONUS_SCORE: int = 50   # 연속 정답 보너스
+    MIN_SCORE: int = 1      # 최소 점수 (쉬움)
+    MAX_SCORE: int = 3      # 최대 점수 (어려움)
+    BONUS_SCORE: int = 1    # 연속 정답 보너스
     
     # ==================== 로깅 설정 ====================
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO" if not DEBUG else "DEBUG")
@@ -240,7 +229,7 @@ if __name__ == "__main__":
     
     print(f"\n🎮 속담 난이도 레벨 설정:")
     for level, info in proverb_config.PROVERB_DIFFICULTY_LEVELS.items():
-        print(f"  - 레벨 {level} {info['name']}: 점수 배율 {info['score_multiplier']}x")
+        print(f"  - 레벨 {level} {info['name']}: {info['score']}점")
         print(f"    📝 {info['description']}")
         print(f"    📚 예시: {', '.join(info['examples'])}")
         print()
