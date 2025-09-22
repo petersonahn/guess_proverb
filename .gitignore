@@ -88,3 +88,34 @@ data/processed/
 # Service specific
 **/temp/
 **/cache/
+
+# 🔐 Sensitive Information (Security)
+# Database credentials
+config.ini
+database.ini
+db_config.py
+**/config_local.py
+
+# API Keys & Secrets
+.secrets
+secrets.json
+api_keys.txt
+*.key
+*.pem
+*.crt
+
+# Environment specific configs
+config_production.py
+config_staging.py
+config_local.py
+
+# Model cache directories (AI models are large)
+app/includes/proverb_models/cache/
+**/model_cache/
+**/huggingface_cache/
+
+# Personal development files
+**/personal/
+**/test_personal/
+dev_notes.txt
+personal_config.py

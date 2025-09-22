@@ -16,7 +16,12 @@
 import os
 from pathlib import Path
 from typing import Dict, List, Optional
-import torch
+try:
+    import torch
+    TORCH_AVAILABLE = True
+except ImportError:
+    torch = None
+    TORCH_AVAILABLE = False
 
 class ProverbDifficultyConfig:
     """
@@ -43,7 +48,7 @@ class ProverbDifficultyConfig:
     MODEL_CACHE_DIR: str = os.path.join(BASE_DIR, "app", "includes", "proverb_models", "cache")  # 속담 모델 캐시
     
     # GPU/CPU 자동 감지 (속담 분석 최적화)
-    DEVICE: str = "cuda" if torch.cuda.is_available() else "cpu"
+    DEVICE: str = "cuda" if (TORCH_AVAILABLE and torch.cuda.is_available()) else "cpu"
     
     # 속담 텍스트 처리 설정
     MAX_SEQUENCE_LENGTH: int = 128  # 속담은 일반적으로 짧으므로 128로 설정
@@ -59,7 +64,7 @@ class ProverbDifficultyConfig:
     DB_HOST: str = os.getenv("DB_HOST", "localhost")
     DB_PORT: int = int(os.getenv("DB_PORT", "3306"))
     DB_USER: str = os.getenv("DB_USER", "root")
-    DB_PASSWORD: str = os.getenv("DB_PASSWORD", "root1234")  # 데이터베이스 비밀번호
+    DB_PASSWORD: str = os.getenv("DB_PASSWORD", "0000")  # 데이터베이스 비밀번호
     DB_NAME: str = os.getenv("DB_NAME", "proverb_game")  # 속담 게임 전용 DB
     
     # 속담 테이블 설정
@@ -164,7 +169,7 @@ class ProverbDifficultyConfig:
             "device_name": "CPU"
         }
         
-        if self.DEVICE == "cuda" and torch.cuda.is_available():
+        if self.DEVICE == "cuda" and TORCH_AVAILABLE and torch.cuda.is_available():
             device_info.update({
                 "device_name": torch.cuda.get_device_name(0),
                 "gpu_count": torch.cuda.device_count(),
