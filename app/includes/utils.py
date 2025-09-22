@@ -86,6 +86,7 @@ def validate_database_connection() -> Dict[str, Union[bool, str, int]]:
     Returns:
         Dict: 연결 상태 정보
         {
+            "success": True/False,
             "connected": True/False,
             "message": "연결 상태 메시지",
             "host": "localhost",
@@ -95,6 +96,7 @@ def validate_database_connection() -> Dict[str, Union[bool, str, int]]:
         }
     """
     result = {
+        "success": False,
         "connected": False,
         "message": "",
         "host": proverb_config.DB_HOST,
@@ -114,6 +116,7 @@ def validate_database_connection() -> Dict[str, Union[bool, str, int]]:
             result["message"] = "데이터베이스 연결 실패"
             return result
         
+        result["success"] = True
         result["connected"] = True
         
         # 테이블 존재 확인

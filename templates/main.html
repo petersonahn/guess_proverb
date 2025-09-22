@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>속담속담 - 시작</title>
+  <!-- 기존 스타일 재사용 + 메인 전용 보강 -->
+  <link rel="stylesheet" href="/static/css/index.css">
+  <link rel="stylesheet" href="/static/css/main.css">
+</head>
+<body>
+  <!-- Animated background (기존과 동일) -->
+  <div class="bg-decorations">
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+  </div>
+
+  <div class="container">
+    <!-- Top nav -->
+    <nav class="top-nav">
+      <div class="nav-title clickable">🧠 속담속담</div>
+      <div class="nav-mode">✨ 시작하기</div>
+    </nav>
+
+    <!-- Hero Card -->
+    <section class="game-card hero-card">
+      <header class="hero-header">
+        <h1 class="hero-title">🎯 속담속담</h1>
+        <p class="hero-subtitle">AI 하이브리드 채점으로 ‘뜻+표면’까지 똑똑하게!</p>
+      </header>
+
+      <div class="cta-buttons">
+        <a class="btn btn-start" href="/game">✨ 게임 시작</a>
+        <a class="btn btn-rank" href="/rankings">🏆 랭킹 보기</a>
+      </div>
+
+      <!-- 미리보기: 상위 5명 -->
+      <div class="leaderboard-preview glass">
+        <div class="lb-header">
+          <span>🏆 상위 5명</span>
+          <a href="/rankings" class="lb-more">전체 보기 →</a>
+        </div>
+        <div class="lb-body">
+          <table class="lb-table">
+            <thead>
+              <tr><th>순위</th><th>이름</th><th>점수</th><th>등록일</th></tr>
+            </thead>
+            <tbody id="lbTop5">
+              <tr><td colspan="4" class="empty">불러오는 중…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 가이드 -->
+      <div class="howto">
+        <details>
+          <summary>ℹ️ 게임 방법 & 채점 방식</summary>
+          <ul>
+            <li><b>🎯 게임 방식:</b> 속담의 앞부분을 보고 뒷부분을 입력하세요 (제한시간 60초)</li>
+            <li><b>🧠 AI 채점:</b> KR-SBERT 모델로 의미적 유사도를 측정합니다</li>
+            <li><b>📊 난이도별 점수:</b> 쉬움 100점, 보통 200점, 어려움 300점</li>
+            <li><b>💡 힌트 시스템:</b> 직접 요청, 1회 오답 후, 또는 10초 경과 시 자동 제공 (점수 50% 감점)</li>
+            <li><b>✅ 정답 기준:</b> 답안 길이에 따른 적응형 임계값 (55%~85%)</li>
+            <li><b>🏆 랭킹 등록:</b> 게임 종료 후 최종 점수를 랭킹에 등록할 수 있습니다</li>
+          </ul>
+        </details>
+      </div>
+    </section>
+  </div>
+
+  <div class="version">v1.1</div>
+
+<!-- head 말미 혹은 body 끝에 배치 -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- 프로젝트 스크립트는 jQuery 다음에, 그리고 defer 유지 -->
+<script defer src="/static/js/main.js"></script>
+</body>
+</html>

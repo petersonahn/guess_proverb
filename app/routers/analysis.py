@@ -81,6 +81,19 @@ async def analyze_single_proverb(request: AnalysisRequest):
         
         # 속담 존재 여부 확인
         proverb_data = proverb_database.get_proverb_by_id(request.proverb_id)
+        # 전역 변수 import (순환 import 방지)
+        import app.main as main
+        
+        main.server_stats["total_requests"] += 1
+        
+        if not main.difficulty_analyzer:
+            raise HTTPException(status_code=500, detail="AI 분석기가 초기화되지 않았습니다")
+        
+        if not main.proverb_database:
+            raise HTTPException(status_code=500, detail="데이터베이스가 초기화되지 않았습니다")
+        
+        # 속담 존재 여부 확인
+        proverb_data = main.proverb_database.get_proverb_by_id(request.proverb_id)
         if not proverb_data:
             raise HTTPException(
                 status_code=404,
@@ -91,12 +104,16 @@ async def analyze_single_proverb(request: AnalysisRequest):
         if not request.force_refresh and request.proverb_id in analysis_cache:
             server_stats["cache_hits"] += 1
             cached_result = analysis_cache[request.proverb_id].copy()
+        if not request.force_refresh and request.proverb_id in main.analysis_cache:
+            main.server_stats["cache_hits"] += 1
+            cached_result = main.analysis_cache[request.proverb_id].copy()
             cached_result["processing_time"] = 0.001  # 캐시 조회 시간
             cached_result["message"] += " (캐시됨)"
             return convert_analysis_result_to_response(cached_result, cached=True)
         
         # AI 분석 수행
         analysis_result = difficulty_analyzer.analyze_proverb_difficulty(request.proverb_id)
+        analysis_result = main.difficulty_analyzer.analyze_proverb_difficulty(request.proverb_id)
         
         # 분석 실패 처리
         if analysis_result["difficulty_level"] == 0:
@@ -108,6 +125,8 @@ async def analyze_single_proverb(request: AnalysisRequest):
         # 캐시에 저장
         analysis_cache[request.proverb_id] = analysis_result.copy()
         server_stats["analysis_count"] += 1
+        main.analysis_cache[request.proverb_id] = analysis_result.copy()
+        main.server_stats["analysis_count"] += 1
         
         return convert_analysis_result_to_response(analysis_result, cached=False)
         
@@ -141,6 +160,15 @@ async def analyze_batch_proverbs(request: BatchAnalysisRequest):
             raise HTTPException(status_code=500, detail="AI 분석기가 초기화되지 않았습니다")
         
         if not proverb_database:
+        # 전역 변수 import (순환 import 방지)
+        import app.main as main
+        
+        main.server_stats["total_requests"] += 1
+        
+        if not main.difficulty_analyzer:
+            raise HTTPException(status_code=500, detail="AI 분석기가 초기화되지 않았습니다")
+        
+        if not main.proverb_database:
             raise HTTPException(status_code=500, detail="데이터베이스가 초기화되지 않았습니다")
         
         start_time = time.time()
@@ -151,6 +179,7 @@ async def analyze_batch_proverbs(request: BatchAnalysisRequest):
         else:
             # 전체 속담 ID 목록 조회
             all_proverbs = proverb_database.get_all_proverbs()
+            all_proverbs = main.proverb_database.get_all_proverbs()
             target_ids = [proverb["id"] for proverb in all_proverbs]
         
         results = []
@@ -164,6 +193,9 @@ async def analyze_batch_proverbs(request: BatchAnalysisRequest):
                 if not request.force_refresh and proverb_id in analysis_cache:
                     server_stats["cache_hits"] += 1
                     cached_result = analysis_cache[proverb_id].copy()
+                if not request.force_refresh and proverb_id in main.analysis_cache:
+                    main.server_stats["cache_hits"] += 1
+                    cached_result = main.analysis_cache[proverb_id].copy()
                     cached_result["processing_time"] = 0.001
                     cached_result["message"] += " (캐시됨)"
                     
@@ -180,6 +212,12 @@ async def analyze_batch_proverbs(request: BatchAnalysisRequest):
                         # 성공
                         analysis_cache[proverb_id] = analysis_result.copy()
                         server_stats["analysis_count"] += 1
+                    analysis_result = main.difficulty_analyzer.analyze_proverb_difficulty(proverb_id)
+                    
+                    if analysis_result["difficulty_level"] > 0:
+                        # 성공
+                        main.analysis_cache[proverb_id] = analysis_result.copy()
+                        main.server_stats["analysis_count"] += 1
                         
                         response = convert_analysis_result_to_response(analysis_result, cached=False)
                         results.append(response)
@@ -228,6 +266,10 @@ async def preload_all_analysis(background_tasks: BackgroundTasks):
     """
     try:
         if not difficulty_analyzer:
+        # 전역 변수 import (순환 import 방지)
+        import app.main as main
+        
+        if not main.difficulty_analyzer:
             raise HTTPException(status_code=500, detail="AI 분석기가 초기화되지 않았습니다")
         
         # 백그라운드 작업으로 전체 분석 실행
@@ -239,6 +281,7 @@ async def preload_all_analysis(background_tasks: BackgroundTasks):
                 "message": "전체 속담 사전 분석 작업이 백그라운드에서 시작되었습니다",
                 "status": "started",
                 "cache_size": len(analysis_cache)
+                "cache_size": len(main.analysis_cache)
             }
         )
         
@@ -251,11 +294,15 @@ async def run_preload_analysis():
     백그라운드에서 실행되는 전체 속담 분석 함수
     """
     try:
+        # 전역 변수 import
+        import app.main as main
+        
         print("🚀 전체 속담 사전 분석 시작...")
         start_time = time.time()
         
         # 배치 분석 실행
         all_results = difficulty_analyzer.batch_analyze_all_proverbs()
+        all_results = main.difficulty_analyzer.batch_analyze_all_proverbs()
         
         # 캐시에 저장
         for result in all_results:
@@ -268,6 +315,14 @@ async def run_preload_analysis():
         
         print(f"✅ 전체 속담 사전 분석 완료!")
         print(f"   - 분석 완료: {len(analysis_cache)}개")
+                main.analysis_cache[result["proverb_id"]] = result
+        
+        processing_time = time.time() - start_time
+        main.server_stats["last_batch_analysis"] = datetime.now().isoformat()
+        main.server_stats["analysis_count"] += len([r for r in all_results if r["difficulty_level"] > 0])
+        
+        print(f"✅ 전체 속담 사전 분석 완료!")
+        print(f"   - 분석 완료: {len(main.analysis_cache)}개")
         print(f"   - 처리 시간: {processing_time:.2f}초")
         
     except Exception as e:
@@ -288,12 +343,17 @@ async def get_cache_status():
     """
     try:
         server_stats["total_requests"] += 1
+        # 전역 변수 import
+        import app.main as main
+        
+        main.server_stats["total_requests"] += 1
         
         # 난이도별 분포 계산
         difficulty_distribution = {}
         total_score = 0
         
         for analysis in analysis_cache.values():
+        for analysis in main.analysis_cache.values():
             level = analysis.get("difficulty_level", 0)
             if level > 0:
                 difficulty_distribution[level] = difficulty_distribution.get(level, 0) + 1
@@ -315,6 +375,21 @@ async def get_cache_status():
                 "cache_hits": server_stats["cache_hits"],
                 "analysis_count": server_stats["analysis_count"],
                 "hit_rate": f"{(server_stats['cache_hits'] / max(server_stats['total_requests'], 1)) * 100:.1f}%"
+        total_proverbs = main.proverb_database.get_proverb_count() if main.proverb_database else 0
+        
+        return {
+            "cache_size": len(main.analysis_cache),
+            "total_proverbs": total_proverbs,
+            "coverage": f"{(len(main.analysis_cache) / max(total_proverbs, 1)) * 100:.1f}%",
+            "difficulty_distribution": difficulty_distribution,
+            "total_score": total_score,
+            "average_score": round(total_score / max(len(main.analysis_cache), 1), 2),
+            "last_batch_analysis": main.server_stats.get("last_batch_analysis"),
+            "stats": {
+                "total_requests": main.server_stats["total_requests"],
+                "cache_hits": main.server_stats["cache_hits"],
+                "analysis_count": main.server_stats["analysis_count"],
+                "hit_rate": f"{(main.server_stats['cache_hits'] / max(main.server_stats['total_requests'], 1)) * 100:.1f}%"
             }
         }
         
@@ -339,11 +414,19 @@ async def clear_cache():
         
         old_size = len(analysis_cache)
         analysis_cache.clear()
+        # 전역 변수 import
+        import app.main as main
+        
+        main.server_stats["total_requests"] += 1
+        
+        old_size = len(main.analysis_cache)
+        main.analysis_cache.clear()
         
         return {
             "message": "분석 캐시가 초기화되었습니다",
             "cleared_count": old_size,
             "current_size": len(analysis_cache)
+            "current_size": len(main.analysis_cache)
         }
         
     except Exception as e:
