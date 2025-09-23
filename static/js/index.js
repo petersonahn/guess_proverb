@@ -469,9 +469,6 @@ $(function() {
   }
   
   $rankClose.on('click', hideRankModal);
-  $rankLater.on('click', function() { 
-    hideRankModal(); 
-  });
 
   // 게임 재시작
   $reloadBtn.on('click', function() {

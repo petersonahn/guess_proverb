@@ -18,18 +18,22 @@ from typing import List, Dict, Any
 
 # 현재 파일의 부모 디렉토리들을 sys.path에 추가
 current_dir = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, current_dir)
+project_root = os.path.dirname(os.path.dirname(current_dir))  # 프로젝트 루트
+sys.path.insert(0, project_root)
 
 try:
     from app.includes.analyzer import ProverbDifficultyAnalyzer
-    from app.includes.utils import print_analysis_summary_table
+    from app.includes.utils import print_analysis_summary_table, print_detailed_analysis_table
+    from app.core.config import proverb_config
 except ImportError as e:
     print(f"❌ 모듈 import 실패: {e}")
     print("해결 방법: 프로젝트 루트에서 실행하세요.")
+    print(f"현재 경로: {current_dir}")
+    print(f"프로젝트 루트: {project_root}")
     sys.exit(1)
 
 
-def check_single_proverb_score(proverb_id: int) -> Dict[str, Any]:
+def check_single_proverb_difficulty(proverb_id: int, show_details: bool = True) -> Dict[str, Any]:
     """
     🔍 개별 속담의 점수를 확인합니다.
     
@@ -64,11 +68,11 @@ def check_single_proverb_score(proverb_id: int) -> Dict[str, Any]:
         return result
         
     except Exception as e:
-        print(f"❌ 점수 확인 실패: {str(e)}")
+        print(f"❌ 난이도 분석 실패: {str(e)}")
         return {}
 
 
-def check_batch_scores(limit: int = 10) -> List[Dict[str, Any]]:
+def check_batch_difficulties(limit: int = 10, show_detailed_table: bool = True) -> List[Dict[str, Any]]:
     """
     📦 여러 속담의 점수를 배치로 확인합니다.
     
@@ -109,11 +113,11 @@ def check_batch_scores(limit: int = 10) -> List[Dict[str, Any]]:
         return results
         
     except Exception as e:
-        print(f"❌ 배치 점수 확인 실패: {str(e)}")
+        print(f"❌ 배치 난이도 분석 실패: {str(e)}")
         return []
 
 
-def check_all_scores() -> List[Dict[str, Any]]:
+def analyze_all_difficulties(force_reanalyze: bool = False) -> List[Dict[str, Any]]:
     """
     🌟 데이터베이스의 모든 속담 점수를 확인합니다.
     """
@@ -153,7 +157,7 @@ def check_all_scores() -> List[Dict[str, Any]]:
         return all_results
         
     except Exception as e:
-        print(f"❌ 전체 점수 확인 실패: {str(e)}")
+        print(f"❌ 전체 난이도 분석 실패: {str(e)}")
         return []
 
 
@@ -166,31 +170,58 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 사용 예시:
-  python check_scores.py                    # 전체 속담 점수 확인
-  python check_scores.py --id 1            # ID 1번 속담 점수 확인
-  python check_scores.py --batch 10        # 처음 10개 속담 점수 확인
+  python check_scores.py                    # 전체 속담 난이도 분석
+  python check_scores.py --id 1            # ID 1번 속담 분석
+  python check_scores.py --batch 10        # 처음 10개 속담 분석
+  python check_scores.py --analyze-all     # 전체 속담 재분석
+  python check_scores.py --stats           # 분석 통계만 확인
         """
     )
     
-    parser.add_argument('--id', type=int, help='확인할 속담 ID')
-    parser.add_argument('--batch', type=int, help='배치로 확인할 속담 개수')
+    parser.add_argument('--id', type=int, help='분석할 속담 ID')
+    parser.add_argument('--batch', type=int, help='배치로 분석할 속담 개수')
+    parser.add_argument('--analyze-all', action='store_true', help='전체 속담 재분석')
+    parser.add_argument('--stats', action='store_true', help='분석 통계만 확인')
+    parser.add_argument('--no-details', action='store_true', help='상세 정보 숨김')
     
     args = parser.parse_args()
     
     print("🎯 속담 게임 - 점수 확인 도구")
     print("=" * 50)
     
-    if args.id:
-        # 개별 속담 점수 확인
-        check_single_proverb_score(args.id)
+    if args.stats:
+        # 분석 통계만 확인
+        try:
+            from app.includes.analyzer import ProverbDifficultyAnalyzer
+            analyzer = ProverbDifficultyAnalyzer()
+            stats = analyzer.get_analysis_statistics()
+            
+            print("📈 현재 분석 통계:")
+            print(f"   - 총 분석 횟수: {stats['total_analyzed']}개")
+            print(f"   - 캐시 적중률: {stats['cache_hit_rate']:.1%}")
+            print(f"   - 평균 처리 시간: {stats['average_processing_time']:.3f}초")
+            print(f"   - 분석 방법: {stats['analysis_method']}")
+            print(f"   - AI 모델: {stats['ai_model']}")
+            
+            analyzer.close()
+        except Exception as e:
+            print(f"❌ 통계 확인 실패: {str(e)}")
+    
+    elif args.id:
+        # 개별 속담 난이도 분석
+        check_single_proverb_difficulty(args.id, show_details=not args.no_details)
         
     elif args.batch:
-        # 배치 점수 확인
-        check_batch_scores(args.batch)
+        # 배치 난이도 분석
+        check_batch_difficulties(args.batch, show_detailed_table=not args.no_details)
+        
+    elif args.analyze_all:
+        # 전체 속담 재분석
+        analyze_all_difficulties(force_reanalyze=True)
         
     else:
-        # 전체 점수 확인
-        check_all_scores()
+        # 전체 난이도 분석
+        analyze_all_difficulties()
     
     print("\n✅ 점수 확인 완료!")
 

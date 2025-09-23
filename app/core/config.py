@@ -84,27 +84,30 @@ class ProverbDifficultyConfig:
         1: {
             "name": "🟢 쉬움", 
             "description": "일상적이고 잘 알려진 속담",
-            "score": 1,
+            "score": 100,  # README v1.2에 맞게 100점
+            "hint_score": 50,  # 힌트 사용 시 50점
             "examples": ["가는 말이 고와야 오는 말이 곱다", "호랑이도 제 말 하면 온다"]
         },
         2: {
             "name": "🟡 보통", 
             "description": "어느 정도 알려진 일반적인 속담",
-            "score": 2,
+            "score": 200,  # README v1.2에 맞게 200점
+            "hint_score": 100,  # 힌트 사용 시 100점
             "examples": ["밤말은 새가 듣고 낮말은 쥐가 듣는다", "백문이 불여일견"]
         },
         3: {
             "name": "🔴 어려움", 
             "description": "복잡하거나 잘 알려지지 않은 속담",
-            "score": 3,
+            "score": 300,  # README v1.2에 맞게 300점
+            "hint_score": 150,  # 힌트 사용 시 150점
             "examples": ["가자니 태산이요, 돌아서자니 숭산이라", "금강산도 식후경"]
         }
     }
     
-    # 속담 게임 점수 설정
-    MIN_SCORE: int = 1      # 최소 점수 (쉬움)
-    MAX_SCORE: int = 3      # 최대 점수 (어려움)
-    BONUS_SCORE: int = 1    # 연속 정답 보너스
+    # 속담 게임 점수 설정 (README v1.2에 맞게 수정)
+    MIN_SCORE: int = 100    # 최소 점수 (쉬움)
+    MAX_SCORE: int = 300    # 최대 점수 (어려움)
+    BONUS_SCORE: int = 50   # 연속 정답 보너스
     
     # ==================== 로깅 설정 ====================
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO" if not DEBUG else "DEBUG")
@@ -227,9 +230,9 @@ if __name__ == "__main__":
     for key, value in device_info.items():
         print(f"  - {key}: {value}")
     
-    print(f"\n🎮 속담 난이도 레벨 설정:")
+    print(f"\n🎮 속담 난이도 레벨 설정 (README v1.2):")
     for level, info in proverb_config.PROVERB_DIFFICULTY_LEVELS.items():
-        print(f"  - 레벨 {level} {info['name']}: {info['score']}점")
+        print(f"  - 레벨 {level} {info['name']}: {info['score']}점 (힌트: {info['hint_score']}점)")
         print(f"    📝 {info['description']}")
         print(f"    📚 예시: {', '.join(info['examples'])}")
         print()

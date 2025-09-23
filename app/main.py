@@ -324,9 +324,22 @@ def get_random_question(used_ids: set = None) -> Optional[Dict[str, Any]]:
         if not proverb_data:
             return None
         
-        # 난이도 분석 (lazy loading)
-        analyzer = get_difficulty_analyzer()
-        difficulty_result = analyzer.analyze_proverb_difficulty(selected_id)
+        # 난이도 정보 확인 (DB에서 우선 조회, 없으면 분석)
+        difficulty_level = proverb_data.get("difficulty_level")
+        difficulty_score = proverb_data.get("difficulty_score")
+        confidence = proverb_data.get("confidence")
+        
+        if difficulty_level is None:
+            # 난이도가 분석되지 않은 경우 실시간 분석
+            print(f"🔍 속담 ID {selected_id} 실시간 난이도 분석 중...")
+            analyzer = get_difficulty_analyzer()
+            difficulty_result = analyzer.analyze_proverb_difficulty(selected_id)
+            
+            difficulty_level = difficulty_result.get("difficulty_level", 2)
+            difficulty_score = difficulty_result.get("score", 200)
+            confidence = difficulty_result.get("confidence", 0.5)
+        else:
+            print(f"💾 속담 ID {selected_id} 캐시된 난이도 사용: {difficulty_level}단계")
         
         return {
             "question_id": selected_id,
@@ -334,24 +347,41 @@ def get_random_question(used_ids: set = None) -> Optional[Dict[str, Any]]:
             "answer": proverb_data["answer"],
             "hint": proverb_data["hint"],
             "full_proverb": proverb_data["full_proverb"],
-            "difficulty_level": difficulty_result.get("difficulty_level", 2),
-            "difficulty_score": difficulty_result.get("score", 2),
-            "confidence": difficulty_result.get("confidence", 0.5)
+            "difficulty_level": difficulty_level,
+            "difficulty_score": difficulty_score,
+            "confidence": confidence
         }
         
     except Exception as e:
         print(f"❌ 문제 생성 실패: {str(e)}")
         return None
 
-def calculate_score(difficulty_level: int, hint_used: bool = False) -> int:
-    """난이도와 힌트 사용 여부에 따른 점수 계산"""
-    base_scores = {1: 100, 2: 200, 3: 300}  # 쉬움: 100점, 보통: 200점, 어려움: 300점
-    base_score = base_scores.get(difficulty_level, 200)
+def calculate_score(difficulty_level: int, hint_used: bool = False, confidence: float = None) -> int:
+    """
+    난이도와 힌트 사용 여부에 따른 점수 계산 (개선된 버전)
     
+    Args:
+        difficulty_level (int): 난이도 레벨 (1-3)
+        hint_used (bool): 힌트 사용 여부
+        confidence (float): 난이도 분석 신뢰도 (선택사항)
+    
+    Returns:
+        int: 계산된 점수
+    """
+    # 기본 점수 (config에서 가져오기)
+    level_info = proverb_config.PROVERB_DIFFICULTY_LEVELS.get(difficulty_level, {})
+    base_score = level_info.get("score", 200)  # config에서 이미 올바른 점수 설정됨
+    
+    # 힌트 사용 시 점수 절반
     if hint_used:
-        return base_score // 2  # 힌트 사용 시 절반
-    else:
-        return base_score
+        base_score = base_score // 2
+    
+    # 신뢰도에 따른 미세 조정 (선택사항)
+    if confidence is not None and confidence < 0.7:
+        # 신뢰도가 낮은 경우 약간의 보너스 (분석 불확실성 보상)
+        base_score = int(base_score * 1.1)
+    
+    return base_score
 
 # ==================== API 엔드포인트 ====================
 

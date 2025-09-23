@@ -1,17 +1,19 @@
 """
-🎯 속담 게임 - 하이브리드 속담 난이도 분석 클래스
+🎯 속담 게임 - 하이브리드 속담 난이도 분석 클래스 (v1.2)
 
-이 모듈은 언어학적 특성과 AI 모델을 결합하여 속담의 난이도를 분석합니다.
-- 언어학적 분석 (80%): 복잡성, 어휘, 구조, 빈도
-- AI 모델 분석 (20%): jhgan/ko-sroberta-multitask 임베딩 특성 분석
+README v1.2에 따른 혁신적인 난이도 분석 시스템:
+- 하이브리드 분석: 언어학적 특성(40%) + AI 모델 분석(60%)
+- 사용 빈도 중심: 일상적 사용 빈도를 기준으로 한 정확한 난이도 측정
+- 패러다임 전환: 속담끼리 비교 → 속담 vs 일반 한국어 사용 패턴 비교
+- jhgan/ko-sroberta-multitask 모델 활용한 고도의 난이도 분석
 
 주요 기능:
 1. 데이터베이스 연동 (proverb_game.proverb 테이블)
-2. 하이브리드 난이도 분석 (언어학적 + AI 모델)
-3. jhgan/ko-sroberta-multitask 모델 전용 사용
-4. 배치 처리 (16개씩 묶어서 처리)
-5. 분석 결과 캐싱 및 성능 모니터링
-6. 진행률 표시 (tqdm)
+2. AI 기반 사용 빈도 분석 (일상/교육/미디어 문맥과의 유사도)
+3. 언어학적 복잡성 분석 (어휘, 구조, 통계적 특성)
+4. 3단계 점수 시스템 (1점/2점/3점)
+5. 고성능 캐싱 및 배치 처리
+6. 실시간 성능 모니터링
 
 사용 예시:
     analyzer = ProverbDifficultyAnalyzer()
@@ -59,16 +61,19 @@ except ImportError as e:
 
 class ProverbDifficultyAnalyzer:
     """
-    🎯 속담 게임 - 데이터베이스 연동 난이도 분석 클래스
+    🎯 속담 게임 - 하이브리드 난이도 분석 클래스 (v1.2)
     
-    데이터베이스에 저장된 속담의 난이도를 AI 모델로 자동 분석합니다.
+    README v1.2에 따른 혁신적인 난이도 분석 시스템:
+    - 하이브리드 분석: 언어학적 특성(40%) + AI 모델 분석(60%)
+    - 사용 빈도 중심: 일상적 사용 빈도를 기준으로 한 정확한 난이도 측정
+    - 패러다임 전환: 속담끼리 비교 → 속담 vs 일반 한국어 사용 패턴 비교
     
     특징:
     - 데이터베이스 연동 (proverb_game.proverb 테이블)
     - jhgan/ko-sroberta-multitask 모델 전용
+    - AI 기반 사용 빈도 분석 (일상/교육/미디어 문맥)
     - 3단계 난이도 분류 (1점, 2점, 3점)
-    - 배치 처리로 성능 최적화 (16개씩 처리)
-    - 분석 결과 캐싱으로 중복 분석 방지
+    - 고성능 캐싱 및 배치 처리
     """
     
     def __init__(self):
@@ -496,66 +501,96 @@ class ProverbDifficultyAnalyzer:
         
         return (repetition_ratio * 0.6 + sound_repetition * 0.4)
     
-    def estimate_usage_frequency(self, proverb_text: str) -> float:
+    def analyze_usage_frequency_with_ai(self, proverb_text: str) -> float:
         """
-        📊 사용 빈도 추정 (0.0 ~ 1.0)
+        🧠 AI 기반 사용 빈도 분석 (0.0 ~ 1.0)
+        
+        README v1.2에 따른 패러다임 전환:
+        - 기존: 속담끼리 비교 → 새로운: 속담 vs 일반 한국어 사용 패턴 비교
+        - 일상/교육/미디어 문맥에서의 친숙도를 AI로 정확하게 분석
         
         Args:
             proverb_text: 분석할 속담 텍스트
             
         Returns:
-            float: 사용 빈도 추정값 (높을수록 자주 사용됨 = 쉬움)
+            float: 사용 빈도 점수 (높을수록 자주 사용됨 = 쉬움)
         """
         try:
-            clean_text = proverb_text.replace(' ', '')
+            # AI 모델이 로드되지 않은 경우 기본값 반환
+            if not self.sentence_model:
+                return 0.5
             
-            # 1. 길이 기반: 짧을수록 자주 사용
-            # 5글자 이하: 1.0, 15글자 이상: 0.0
-            length_score = max(0.0, 1.0 - (len(clean_text) - 5) / 10.0)
-            
-            # 2. 현대적 어휘 포함 여부
-            modern_words = [
-                '하다', '되다', '있다', '없다', '말', '사람', '집', '물',
-                '하면', '되면', '때문에', '그래서', '그런데'
-            ]
-            
-            modern_count = sum(1 for word in modern_words if word in proverb_text)
-            modern_score = min(modern_count / 2.0, 1.0)
-            
-            # 3. 교육과정 출현 빈도 (초등학교에서 배우는 속담)
-            elementary_patterns = [
-                '가는 말', '오는 말', '티끌', '태산', '등잔', '밑', '어둡다',
-                '내 코', '석 자', '가재', '게', '편이라'
-            ]
-            
-            elementary_count = sum(1 for pattern in elementary_patterns if pattern in proverb_text)
-            education_score = min(elementary_count / 1.0, 1.0)
-            
-            # 4. 일상 상황 연관성
+            # 1. 일상 문맥 패턴들 (15개 패턴)
             daily_contexts = [
-                '말', '사람', '집', '물', '밥', '돈', '길', '손', '눈'
+                "항상 말하듯이", "누구나 아는 이야기", "흔히 말하는", "자주 듣는 말",
+                "일상에서 쓰는", "평범한 이야기", "간단한 말", "쉬운 이야기",
+                "많이 쓰는 말", "흔한 이야기", "보통 말", "일반적인 이야기",
+                "자주 하는 말", "흔히 하는 이야기", "평소에 말하는"
             ]
             
-            daily_count = sum(1 for context in daily_contexts if context in proverb_text)
-            daily_score = min(daily_count / 2.0, 1.0)
+            # 2. 교육 문맥 패턴들
+            education_contexts = [
+                "중요한 교훈", "지혜로운 말씀", "가르치는 이야기", "배우는 내용",
+                "교육적인 말", "교훈이 되는", "학습하는 내용", "가르침이 되는"
+            ]
             
-            # 최종 사용 빈도 점수
-            frequency_score = (
-                length_score * 0.4 +      # 길이 (가장 중요)
-                education_score * 0.3 +   # 교육과정 출현
-                modern_score * 0.2 +      # 현대적 어휘
-                daily_score * 0.1         # 일상 연관성
+            # 3. 미디어 문맥 패턴들
+            media_contexts = [
+                "많은 사람들이 말하는", "널리 알려진", "유명한 이야기", "인기 있는 말",
+                "화제가 되는", "많이 회자되는", "널리 퍼진", "인기 있는"
+            ]
+            
+            # 4. 일반적인 한국어 문장 구조 패턴들
+            general_structures = [
+                "이런 말이 있다", "말로는 이렇다", "보통 이렇게 말한다",
+                "흔히 하는 말", "자주 듣는 이야기", "많이 하는 말"
+            ]
+            
+            # 모든 참조 패턴들을 하나의 리스트로 결합
+            all_reference_patterns = daily_contexts + education_contexts + media_contexts + general_structures
+            
+            # 속담과 참조 패턴들 간의 유사도 계산
+            proverb_embedding = self.sentence_model.encode([proverb_text], convert_to_tensor=True)[0]
+            reference_embeddings = self.sentence_model.encode(all_reference_patterns, convert_to_tensor=True)
+            
+            # 코사인 유사도 계산
+            similarities = []
+            for ref_embedding in reference_embeddings:
+                similarity = torch.cosine_similarity(proverb_embedding.unsqueeze(0), ref_embedding.unsqueeze(0))
+                similarities.append(similarity.item())
+            
+            # 카테고리별 평균 유사도 계산
+            daily_similarity = np.mean(similarities[:len(daily_contexts)])
+            education_similarity = np.mean(similarities[len(daily_contexts):len(daily_contexts)+len(education_contexts)])
+            media_similarity = np.mean(similarities[len(daily_contexts)+len(education_contexts):len(daily_contexts)+len(education_contexts)+len(media_contexts)])
+            structure_similarity = np.mean(similarities[len(daily_contexts)+len(education_contexts)+len(media_contexts):])
+            
+            # 가중 평균으로 최종 사용 빈도 점수 계산
+            # 일상 문맥이 가장 중요 (40%), 교육(30%), 미디어(20%), 구조(10%)
+            usage_frequency_score = (
+                daily_similarity * 0.4 +      # 일상 문맥 (가장 중요)
+                education_similarity * 0.3 +   # 교육 문맥
+                media_similarity * 0.2 +       # 미디어 문맥
+                structure_similarity * 0.1     # 구조적 친숙성
             )
             
-            return round(min(max(frequency_score, 0.0), 1.0), 3)
+            # 점수를 0.0~1.0 범위로 정규화
+            normalized_score = max(0.0, min(usage_frequency_score, 1.0))
+            
+            return round(normalized_score, 3)
             
         except Exception as e:
-            print(f"⚠️ 사용 빈도 추정 오류: {str(e)}")
+            print(f"⚠️ AI 기반 사용 빈도 분석 오류: {str(e)}")
             return 0.5
     
     def calculate_final_difficulty(self, proverb_text: str) -> Dict[str, Any]:
         """
-        🎯 하이브리드 최종 난이도 계산 (언어학적 분석 + AI 모델)
+        🎯 하이브리드 최종 난이도 계산 (README v1.2 방식)
+        
+        혁신적인 분석 방식:
+        - 언어학적 특성 분석 (40%): 복잡성, 어휘, 구조
+        - AI 기반 사용 빈도 분석 (60%): 일상/교육/미디어 문맥과의 유사도
+        - 패러다임 전환: 속담끼리 비교 → 속담 vs 일반 한국어 사용 패턴 비교
         
         Args:
             proverb_text: 분석할 속담 텍스트
@@ -564,34 +599,36 @@ class ProverbDifficultyAnalyzer:
             Dict[str, Any]: 상세한 분석 결과
         """
         try:
-            # 1. 언어학적 분석 (80%)
+            # 1. 언어학적 분석 (40%)
             linguistic_complexity = self.calculate_linguistic_complexity(proverb_text)
             vocab_difficulty = self.calculate_vocabulary_difficulty(proverb_text)
             structural_simplicity = self.calculate_structural_simplicity(proverb_text)
-            usage_frequency = self.estimate_usage_frequency(proverb_text)
             
-            # 언어학적 종합 점수
+            # 2. AI 기반 사용 빈도 분석 (60% 가중치의 핵심)
+            usage_frequency = self.analyze_usage_frequency_with_ai(proverb_text)
+            
+            # 언어학적 종합 점수 (40% 가중치)
             linguistic_score = (
                 linguistic_complexity * 0.4 +        # 언어적 복잡성
                 vocab_difficulty * 0.3 +              # 어휘 난이도
                 (1 - structural_simplicity) * 0.2 +   # 구조적 복잡성
-                (1 - usage_frequency) * 0.1           # 사용 빈도의 역
+                (1 - usage_frequency) * 0.1           # AI 기반 사용 빈도의 역
             )
             
-            # 2. AI 모델 임베딩 분석 (20%)
+            # AI 모델 임베딩 분석 (60% 가중치의 핵심)
             embedding_characteristics = self.analyze_embedding_characteristics(proverb_text)
             
-            # AI 모델 종합 점수
+            # AI 모델 종합 점수 (사용 빈도 중심)
             ai_score = (
-                embedding_characteristics["complexity"] * 0.3 +      # 의미적 복잡성
-                embedding_characteristics["semantic_density"] * 0.25 + # 의미적 밀도
-                embedding_characteristics["polarity"] * 0.2 +        # 극성
-                embedding_characteristics["activation"] * 0.15 +     # 활성화 강도
-                embedding_characteristics["dynamic_range"] * 0.1     # 동적 범위
+                (1 - usage_frequency) * 0.5 +         # AI 기반 사용 빈도 (가장 중요)
+                embedding_characteristics["complexity"] * 0.2 +      # 의미적 복잡성
+                embedding_characteristics["semantic_density"] * 0.15 + # 의미적 밀도
+                embedding_characteristics["polarity"] * 0.1 +        # 극성
+                embedding_characteristics["activation"] * 0.05       # 활성화 강도
             )
             
-            # 3. 최종 하이브리드 점수 (최적화된 가중치: 언어학적 80% + AI 20%)
-            final_score = linguistic_score * 0.8 + ai_score * 0.2
+            # 3. 최종 하이브리드 점수 (README v1.2 가중치: 언어학적 40% + AI 60%)
+            final_score = linguistic_score * 0.4 + ai_score * 0.6
             
             # 점수를 1-3 레벨로 변환 (최적화된 경계값)
             if final_score <= 0.45:  # 0.35 → 0.45로 상향 조정
@@ -606,7 +643,7 @@ class ProverbDifficultyAnalyzer:
             
             confidence = min(max(confidence, 0.3), 1.0)
             
-            # 설명 생성 (하이브리드 버전)
+            # 설명 생성 (README v1.2 하이브리드 버전)
             explanation = self._generate_hybrid_explanation(
                 difficulty_level, final_score, linguistic_score, ai_score,
                 linguistic_complexity, vocab_difficulty, structural_simplicity, usage_frequency,
@@ -632,8 +669,8 @@ class ProverbDifficultyAnalyzer:
                     }
                 },
                 "weights": {
-                    "linguistic_analysis": 0.8,
-                    "ai_model_analysis": 0.2
+                    "linguistic_analysis": 0.4,
+                    "ai_model_analysis": 0.6
                 }
             }
             
@@ -680,8 +717,8 @@ class ProverbDifficultyAnalyzer:
         elif embedding_chars["semantic_density"] < 0.3:
             reasons.append("의미 밀도 낮음")
         
-        # 주요 분석 방식 표시
-        dominant_analysis = "언어학적" if linguistic_score > ai_score else "AI 모델"
+        # 주요 분석 방식 표시 (README v1.2 방식)
+        dominant_analysis = "AI 기반 사용 빈도" if ai_score > linguistic_score else "언어학적 특성"
         
         explanation = f"{level_name} 난이도 (점수: {final_score:.2f}, {dominant_analysis} 분석 우세)"
         if reasons:
@@ -1023,9 +1060,9 @@ if __name__ == "__main__":
     실행 방법:
         python difficulty_analyzer_new.py
     """
-    print("🎯 속담 게임 - 하이브리드 속담 난이도 분석기")
-    print("🔬 분석 방식: 언어학적 분석(80%) + jhgan/ko-sroberta-multitask 모델(20%)")
-    print("📊 참조 속담 방식 제거 - 임베딩 벡터 특성 직접 분석")
+    print("🎯 속담 게임 - 하이브리드 속담 난이도 분석기 (v1.2)")
+    print("🔬 분석 방식: 언어학적 특성(40%) + AI 기반 사용 빈도 분석(60%)")
+    print("📊 패러다임 전환: 속담끼리 비교 → 속담 vs 일반 한국어 사용 패턴 비교")
     print("🗄️ 데이터베이스: proverb_game.proverb (root/0000)")
     print()
     

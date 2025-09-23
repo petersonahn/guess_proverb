@@ -31,6 +31,7 @@ def check_conda_environment():
         print("⚠️ conda 가상환경 'aa'가 활성화되지 않았습니다.")
         print("다음 명령어로 가상환경을 활성화한 후 다시 실행해주세요:")
         print("conda activate aa")
+        print("※가상환경 'aa' 파이썬 버전은 3.10으로 만들어주세요")
         return False
     return True
 

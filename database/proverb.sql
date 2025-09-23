@@ -9,16 +9,23 @@ COLLATE utf8mb4_unicode_ci;
 -- 2. proverb_game 스키마 사용
 USE proverb_game;
 
--- 3. proverb 테이블 생성
+-- 3. proverb 테이블 생성 (난이도 분석 기능 추가)
 CREATE TABLE IF NOT EXISTS proverb (
     id INT AUTO_INCREMENT PRIMARY KEY COMMENT '속담 고유 ID',
     question VARCHAR(255) NOT NULL COMMENT '속담 앞부분 문제',
     answer VARCHAR(255) NOT NULL COMMENT '속담 뒷부분 정답',
-    hint VARCHAR(255) NOT NULL COMMENT '힌트 (어려운 문제용)'
+    hint VARCHAR(255) NOT NULL COMMENT '힌트 (어려운 문제용)',
+    difficulty_level TINYINT DEFAULT NULL COMMENT '난이도 레벨 (1:쉬움, 2:보통, 3:어려움)',
+    difficulty_score INT DEFAULT NULL COMMENT '난이도 점수 (100, 200, 300)',
+    confidence FLOAT DEFAULT NULL COMMENT '난이도 분석 신뢰도 (0.0-1.0)',
+    analysis_method VARCHAR(50) DEFAULT NULL COMMENT '분석 방법 (hybrid, linguistic, ai)',
+    analyzed_at TIMESTAMP NULL DEFAULT NULL COMMENT '난이도 분석 일시',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '생성 일시',
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정 일시'
 ) ENGINE=InnoDB 
 CHARACTER SET utf8mb4 
 COLLATE utf8mb4_unicode_ci 
-COMMENT='속담 게임 테이블';
+COMMENT='속담 게임 테이블 (난이도 분석 기능 포함)';
 
 -- 4. 속담 데이터 삽입 (총 84개 - 앞부분과 뒷부분으로 분리)
 INSERT INTO proverb (question, answer, hint) VALUES
@@ -120,4 +127,21 @@ WHERE TABLE_SCHEMA = 'proverb_game';
 DESCRIBE proverb;
 
 -- 7. 샘플 데이터 조회 (한글 표시 확인)
-SELECT * FROM proverb;
+SELECT id, question, answer, hint, difficulty_level, difficulty_score, confidence 
+FROM proverb LIMIT 10;
+
+-- 8. 난이도 분석 상태 확인
+SELECT 
+    difficulty_level,
+    COUNT(*) as count,
+    ROUND(AVG(confidence), 3) as avg_confidence,
+    ROUND(AVG(difficulty_score), 1) as avg_score
+FROM proverb 
+WHERE difficulty_level IS NOT NULL 
+GROUP BY difficulty_level 
+ORDER BY difficulty_level;
+
+-- 9. 분석되지 않은 속담 확인
+SELECT COUNT(*) as unanalyzed_count 
+FROM proverb 
+WHERE difficulty_level IS NULL;
