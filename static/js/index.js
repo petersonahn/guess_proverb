@@ -136,6 +136,33 @@ $(function() {
     if (gameInfo.streak_count !== undefined) {
       streakCount = gameInfo.streak_count;
       $streakCount.text(streakCount);
+      
+      // 연속 정답 보너스 시각적 효과 (2연속부터)
+      if (streakCount >= 2) {
+        $streakCount.addClass('streak-bonus').css({
+          'color': '#ff6b35',
+          'font-weight': 'bold',
+          'text-shadow': '1px 1px 2px rgba(0,0,0,0.3)',
+          'animation': 'pulse 0.5s ease-in-out'
+        });
+        
+        // 4연속 이상일 때 더 강한 효과
+        if (streakCount >= 4) {
+          $streakCount.css({
+            'color': '#e74c3c',
+            'font-size': '1.2em',
+            'text-shadow': '2px 2px 4px rgba(0,0,0,0.5)'
+          });
+        }
+      } else {
+        $streakCount.removeClass('streak-bonus').css({
+          'color': '',
+          'font-weight': '',
+          'text-shadow': '',
+          'animation': '',
+          'font-size': ''
+        });
+      }
     }
   }
 
@@ -185,24 +212,32 @@ $(function() {
     $reloadBtn.show();
   }
 
-  function showScoreAnimation(points) {
+  function showScoreAnimation(points, bonusPoints) {
     $currentScore.addClass('score-pulse').css('color', '#28a745');
     setTimeout(function() {
       $currentScore.removeClass('score-pulse').css('color', '#667eea');
     }, 600);
     
-    // 점수 팝업 효과
-    var $popup = $('<div class="score-popup">+' + points + '점</div>');
+    // 점수 팝업 효과 - 보너스 점수 포함
+    var popupText = '+' + points + '점';
+    if (bonusPoints > 0) {
+      popupText = '+' + (points - bonusPoints) + '점 + 보너스 ' + bonusPoints + '점';
+    }
+    
+    var $popup = $('<div class="score-popup">' + popupText + '</div>');
+    var popupColor = bonusPoints > 0 ? '#ff6b35' : '#28a745'; // 보너스가 있으면 주황색
+    
     $popup.css({
       position: 'absolute',
       top: '50%',
       left: '50%',
       transform: 'translate(-50%, -50%)',
-      fontSize: '24px',
+      fontSize: bonusPoints > 0 ? '20px' : '24px',
       fontWeight: 'bold',
-      color: '#28a745',
+      color: popupColor,
       zIndex: 1000,
-      pointerEvents: 'none'
+      pointerEvents: 'none',
+      textShadow: bonusPoints > 0 ? '2px 2px 4px rgba(0,0,0,0.3)' : 'none'
     });
     
     $('body').append($popup);
@@ -337,7 +372,7 @@ $(function() {
       isGameActive = false;
       if (resp.correct && resp.score_earned) {
         updateGameInfo({ current_score: currentScore + resp.score_earned });
-        showScoreAnimation(resp.score_earned);
+        showScoreAnimation(resp.score_earned, resp.bonus_score || 0);
       }
       
       setTimeout(function() {
@@ -349,7 +384,7 @@ $(function() {
     if (resp.correct) {
       // 정답 처리
       if (resp.score_earned) {
-        showScoreAnimation(resp.score_earned);
+        showScoreAnimation(resp.score_earned, resp.bonus_score || 0);
       }
       updateGameInfo(resp.game_info);
       

@@ -1,31 +1,18 @@
--- MySQL 8.4 버전에서 proverb_game 스키마와 proverb 테이블 생성
--- 한글 지원을 위한 UTF8MB4 문자셋 사용
+select * from proverb;
+DELETE FROM proverb WHERE id > 0;
+drop table proverb;
 
--- 1. proverb_game 스키마 생성
-CREATE DATABASE IF NOT EXISTS proverb_game
-CHARACTER SET utf8mb4
-COLLATE utf8mb4_unicode_ci;
 
--- 2. proverb_game 스키마 사용
-USE proverb_game;
-
--- 3. proverb 테이블 생성 (난이도 분석 기능 추가)
 CREATE TABLE IF NOT EXISTS proverb (
     id INT AUTO_INCREMENT PRIMARY KEY COMMENT '속담 고유 ID',
     question VARCHAR(255) NOT NULL COMMENT '속담 앞부분 문제',
     answer VARCHAR(255) NOT NULL COMMENT '속담 뒷부분 정답',
-    hint VARCHAR(255) NOT NULL COMMENT '힌트 (어려운 문제용)',
-    difficulty_level TINYINT DEFAULT NULL COMMENT '난이도 레벨 (1:쉬움, 2:보통, 3:어려움)',
-    difficulty_score INT DEFAULT NULL COMMENT '난이도 점수 (100, 200, 300)',
-    confidence FLOAT DEFAULT NULL COMMENT '난이도 분석 신뢰도 (0.0-1.0)',
-    analysis_method VARCHAR(50) DEFAULT NULL COMMENT '분석 방법 (hybrid, linguistic, ai)',
-    analyzed_at TIMESTAMP NULL DEFAULT NULL COMMENT '난이도 분석 일시',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '생성 일시',
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '수정 일시'
+    hint VARCHAR(255) NOT NULL COMMENT '힌트 (어려운 문제용)'
 ) ENGINE=InnoDB 
 CHARACTER SET utf8mb4 
 COLLATE utf8mb4_unicode_ci 
-COMMENT='속담 게임 테이블 (난이도 분석 기능 포함)';
+COMMENT='속담 게임 테이블';
+
 
 -- 4. 속담 데이터 삽입 (총 84개 - 앞부분과 뒷부분으로 분리)
 INSERT INTO proverb (question, answer, hint) VALUES
@@ -47,7 +34,7 @@ INSERT INTO proverb (question, answer, hint) VALUES
 ('입에 쓴 약이', '몸에 좋다', '듣기 싫은 말일수록 도움이 된다는 의미입니다.'),
 ('자라 보고 놀란 가슴', '솥뚜껑 보고 놀란다', '한번 놀란 사람이 비슷한 것만 봐도 겁을 낸다는 뜻입니다.'),
 ('천 리 길도', '한 걸음부터', '큰 일도 작은 시작에서부터 한다는 의미입니다.'),
-('콩 심은 데 콩 나고', '팥 심은 데 팥 난다', '원인에 따라 결과가 달라진다는 뜻입니다.'),
+('콩 심은 데', '콩 나고 팥 심은 데 팥 난다', '원인에 따라 결과가 달라진다는 뜻입니다.'),
 ('호미로 막을 것을', '가래로 막는다', '작은 일을 과도하게 처리한다는 의미입니다.'),
 ('호랑이도', '제 말 하면 온다', '나쁜 말을 하면 그 일이 실제로 일어난다는 뜻입니다.'),
 ('빈 수레가', '요란하다', '실력 없는 사람이 더 큰소리를 친다는 의미입니다.'),
@@ -101,7 +88,7 @@ INSERT INTO proverb (question, answer, hint) VALUES
 ('불난 데', '부채질한다', '엎친 데 덮치듯 상황을 더 악화시킴을 의미합니다.'),
 ('비온 뒤에', '땅이 굳어진다', '풍파를 겪고 난 후 일이 더욱 단단해짐을 뜻합니다.'),
 ('빛 좋은', '개살구', '겉만 좋고 실속이 없는 경우를 의미합니다.'),
-('사돈', '남 말한다', '자기 잘못은 모르고 남의 일만 간섭함을 뜻합니다.'),
+('사돈', '남 나무란다', '자기 잘못은 모르고 남의 일만 간섭함을 뜻합니다.'),
 ('고래 싸움에', '새우 등 터진다', '강자들 싸움에 약자가 피해를 보는 상황을 의미합니다.'),
 ('서울에서', '김서방 찾기', '잘 알지도 못하고 막연히 찾아다니는 일을 뜻합니다.'),
 ('세 살 버릇', '여든까지 간다', '어린 시절의 버릇은 고치기 어렵다는 의미입니다.'),
@@ -114,7 +101,6 @@ INSERT INTO proverb (question, answer, hint) VALUES
 ('오르지 못할 나무는', '쳐다보지도 말아라', '처음부터 불가능한 일을 시도하지 말라는 뜻입니다.'),
 ('울며', '겨자 먹기', '마지못해 싫은 일을 억지로 하는 것을 의미합니다.');
 
--- 5. 문자셋 확인 쿼리
 SELECT 
     TABLE_SCHEMA,
     TABLE_NAME,
@@ -123,25 +109,12 @@ SELECT
 FROM information_schema.TABLES 
 WHERE TABLE_SCHEMA = 'proverb_game';
 
--- 6. 테이블 구조 확인
-DESCRIBE proverb;
-
--- 7. 샘플 데이터 조회 (한글 표시 확인)
-SELECT id, question, answer, hint, difficulty_level, difficulty_score, confidence 
-FROM proverb LIMIT 10;
-
--- 8. 난이도 분석 상태 확인
-SELECT 
-    difficulty_level,
-    COUNT(*) as count,
-    ROUND(AVG(confidence), 3) as avg_confidence,
-    ROUND(AVG(difficulty_score), 1) as avg_score
-FROM proverb 
-WHERE difficulty_level IS NOT NULL 
-GROUP BY difficulty_level 
-ORDER BY difficulty_level;
-
--- 9. 분석되지 않은 속담 확인
-SELECT COUNT(*) as unanalyzed_count 
-FROM proverb 
-WHERE difficulty_level IS NULL;
+CREATE TABLE IF NOT EXISTS user (
+    user_id INT AUTO_INCREMENT PRIMARY KEY COMMENT '유저 고유 ID',
+    username VARCHAR(50) NOT NULL COMMENT '유저명',
+    total_score INT DEFAULT 0 COMMENT '점수(합산)',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '등록 날짜'
+) ENGINE=InnoDB 
+CHARACTER SET utf8mb4 
+COLLATE utf8mb4_unicode_ci 
+COMMENT='유저 게임 결과 저장 테이블';

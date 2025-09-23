@@ -356,17 +356,18 @@ def get_random_question(used_ids: set = None) -> Optional[Dict[str, Any]]:
         print(f"❌ 문제 생성 실패: {str(e)}")
         return None
 
-def calculate_score(difficulty_level: int, hint_used: bool = False, confidence: float = None) -> int:
+def calculate_score(difficulty_level: int, hint_used: bool = False, confidence: float = None, streak_count: int = 0) -> Dict[str, int]:
     """
-    난이도와 힌트 사용 여부에 따른 점수 계산 (개선된 버전)
+    난이도와 힌트 사용 여부에 따른 점수 계산 (보너스 점수 포함)
     
     Args:
         difficulty_level (int): 난이도 레벨 (1-3)
         hint_used (bool): 힌트 사용 여부
         confidence (float): 난이도 분석 신뢰도 (선택사항)
+        streak_count (int): 연속 정답 횟수
     
     Returns:
-        int: 계산된 점수
+        Dict[str, int]: {"base_score": 기본점수, "bonus_score": 보너스점수, "total_score": 총점수}
     """
     # 기본 점수 (config에서 가져오기)
     level_info = proverb_config.PROVERB_DIFFICULTY_LEVELS.get(difficulty_level, {})
@@ -381,7 +382,50 @@ def calculate_score(difficulty_level: int, hint_used: bool = False, confidence: 
         # 신뢰도가 낮은 경우 약간의 보너스 (분석 불확실성 보상)
         base_score = int(base_score * 1.1)
     
-    return base_score
+    # 연속 정답 보너스 계산 (힌트 사용 여부 전달)
+    bonus_score = calculate_streak_bonus(base_score, streak_count, hint_used)
+    total_score = base_score + bonus_score
+    
+    return {
+        "base_score": base_score,
+        "bonus_score": bonus_score,
+        "total_score": total_score
+    }
+
+def calculate_streak_bonus(base_score: int, streak_count: int, hint_used: bool = False) -> int:
+    """
+    연속 정답에 따른 보너스 점수 계산
+    
+    Args:
+        base_score (int): 기본 점수
+        streak_count (int): 연속 정답 횟수
+        hint_used (bool): 힌트 사용 여부
+    
+    Returns:
+        int: 보너스 점수
+    """
+    if streak_count < 2:
+        return 0
+    
+    # 연속 정답 보너스 규칙 (2-5연속으로 축소)
+    if streak_count >= 5:
+        bonus_multiplier = 0.5  # 50% 보너스
+    elif streak_count >= 4:
+        bonus_multiplier = 0.3  # 30% 보너스
+    elif streak_count >= 3:
+        bonus_multiplier = 0.2  # 20% 보너스
+    elif streak_count >= 2:
+        bonus_multiplier = 0.1  # 10% 보너스
+    else:
+        bonus_multiplier = 0
+    
+    bonus_score = int(base_score * bonus_multiplier)
+    
+    # 힌트 사용 시 보너스 점수 절반
+    if hint_used:
+        bonus_score = bonus_score // 2
+    
+    return bonus_score
 
 # ==================== API 엔드포인트 ====================
 
@@ -490,9 +534,13 @@ async def submit_answer(request: AnswerSubmitRequest):
         similarity_score = similarity_result["similarity"]
         
         if is_correct:
-            # 정답 처리
-            score = calculate_score(current_q["difficulty_level"], session.hint_used)
-            session.current_score += score
+            # 정답 처리 - 연속 정답 보너스 포함 점수 계산
+            score_data = calculate_score(current_q["difficulty_level"], session.hint_used, streak_count=session.streak_count + 1)
+            total_score_earned = score_data["total_score"]
+            base_score_earned = score_data["base_score"]
+            bonus_score_earned = score_data["bonus_score"]
+            
+            session.current_score += total_score_earned
             session.correct_answers += 1
             session.questions_answered += 1
             session.streak_count += 1
@@ -507,12 +555,25 @@ async def submit_answer(request: AnswerSubmitRequest):
                 session.current_question = next_question
                 session.used_question_ids.add(next_question["question_id"])
                 
+                # 보너스 메시지 생성 (힌트 사용 여부 포함)
+                hint_penalty = session.hint_used
+                if bonus_score_earned > 0:
+                    if hint_penalty:
+                        message = f"정답입니다! (+{base_score_earned}점 + 보너스 {bonus_score_earned}점* = 총 {total_score_earned}점) 🔥 {session.streak_count}연속! *힌트 사용으로 보너스 절반"
+                    else:
+                        message = f"정답입니다! (+{base_score_earned}점 + 보너스 {bonus_score_earned}점 = 총 {total_score_earned}점) 🔥 {session.streak_count}연속!"
+                else:
+                    message = f"정답입니다! (+{total_score_earned}점)"
+                
                 return {
                     "success": True,
                     "correct": True,
-                    "score_earned": score,
+                    "score_earned": total_score_earned,
+                    "base_score": base_score_earned,
+                    "bonus_score": bonus_score_earned,
+                    "hint_used": hint_penalty,
                     "similarity": similarity_score,
-                    "message": f"정답입니다! (+{score}점)",
+                    "message": message,
                     "next_question": {
                         "question_id": next_question["question_id"],
                         "question_text": next_question["question"],
@@ -529,13 +590,25 @@ async def submit_answer(request: AnswerSubmitRequest):
             else:
                 # 문제가 없거나 시간 종료
                 session.end_game()
+                # 보너스 메시지 생성 (힌트 사용 여부 포함)
+                hint_penalty = session.hint_used
+                if bonus_score_earned > 0:
+                    if hint_penalty:
+                        message = f"게임 종료! 마지막 문제 (+{base_score_earned}점 + 보너스 {bonus_score_earned}점* = 총 {total_score_earned}점) 🔥 *힌트 사용으로 보너스 절반"
+                    else:
+                        message = f"게임 종료! 마지막 문제 (+{base_score_earned}점 + 보너스 {bonus_score_earned}점 = 총 {total_score_earned}점) 🔥"
+                else:
+                    message = f"게임 종료! 마지막 문제 (+{total_score_earned}점)"
+                
                 return {
                     "success": True,
                     "correct": True,
-                    "score_earned": score,
+                    "score_earned": total_score_earned,
+                    "base_score": base_score_earned,
+                    "bonus_score": bonus_score_earned,
                     "similarity": similarity_score,
                     "game_ended": True,
-                    "message": "게임 종료! 모든 문제를 완료했습니다.",
+                    "message": message,
                     "final_score": session.current_score,
                     "stats": {
                         "questions_answered": session.questions_answered,
