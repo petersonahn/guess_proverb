@@ -471,24 +471,67 @@ BATCH_SIZE = 4  # 기본값 16에서 줄이기
 
 ## ⚙️ 설정 가이드
 
+### 🔧 **환경변수 설정 (권장)**
+프로젝트 루트에 `.env` 파일을 생성하여 설정을 관리하세요:
+
+```bash
+# 1. 템플릿 파일 복사
+cp .env.example .env
+
+# 2. .env 파일 편집하여 실제 값 입력
+```
+
+#### 📝 **주요 환경변수 목록**
+```bash
+# ==================== 개발/운영 모드 설정 ====================
+DEBUG=True
+LOG_LEVEL=DEBUG
+
+# ==================== 데이터베이스 설정 ====================
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=your-database-password
+DB_NAME=proverb_game
+
+# ==================== API 서버 설정 ====================
+API_HOST=127.0.0.1
+API_PORT=8080
+
+# ==================== 보안 설정 ====================
+SECRET_KEY=your-secret-key-change-in-production-please-use-strong-random-key
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+# ==================== 캐시 설정 ====================
+ENABLE_CACHE=True
+CACHE_TTL=3600
+
+# ==================== AI 모델 설정 ====================
+# HF_TOKEN=your-huggingface-token-if-needed
+
+# ==================== 외부 서비스 설정 ====================
+# OPENAI_API_KEY=your-openai-api-key
+# GOOGLE_API_KEY=your-google-api-key
+```
+
 ### 🗄️ **데이터베이스 설정**
-`app/core/config.py` 파일에서 수정:
-```python
-# 데이터베이스 연결 정보
-DB_HOST = "localhost"          # MySQL 서버 주소
-DB_PORT = 3306                 # MySQL 포트
-DB_USER = "root"               # 사용자명
-DB_PASSWORD = "root1234"       # 비밀번호
-DB_NAME = "proverb_game"       # 데이터베이스명
+`.env` 파일에서 데이터베이스 연결 정보를 설정하세요:
+```bash
+# .env 파일에 다음 정보를 입력하세요
+DB_HOST=your-mysql-host
+DB_PORT=3306
+DB_USER=your-username
+DB_PASSWORD=your-password
+DB_NAME=proverb_game
 ```
 
 ### 🤖 **AI 모델 설정**
 ```python
 # 모델 관련 설정
-MODEL_NAME = "snunlp/KR-SBERT-V40K-klueNLI-augSTS"  # 사용할 모델
+MODEL_NAME = "jhgan/ko-sroberta-multitask"  # 속담 분석 전용 모델
 MODEL_CACHE_DIR = "app/includes/proverb_models/cache/"  # 모델 캐시 경로
 BATCH_SIZE = 16                # 배치 크기 (GPU 기준)
-MAX_SEQ_LENGTH = 512           # 최대 시퀀스 길이
+MAX_SEQUENCE_LENGTH = 128      # 속담 최대 시퀀스 길이
 ```
 
 ### 🌐 **서버 설정**
@@ -498,6 +541,12 @@ API_HOST = "127.0.0.1"         # 서버 주소
 API_PORT = 8080                # 서버 포트
 API_RELOAD = True              # 개발 모드 (자동 리로드)
 ```
+
+### 🔒 **보안 설정**
+운영 환경에서는 반드시 다음 설정을 변경하세요:
+- `SECRET_KEY`: 강력한 랜덤 키로 변경
+- `DB_PASSWORD`: 실제 데이터베이스 비밀번호로 설정
+- `DEBUG=False`: 운영 모드로 설정
 
 ## 📈 성능 최적화
 

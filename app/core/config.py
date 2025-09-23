@@ -16,6 +16,18 @@
 import os
 from pathlib import Path
 from typing import Dict, List, Optional
+from dotenv import load_dotenv
+
+# .env 파일 로딩 (프로젝트 루트에서)
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+env_path = BASE_DIR / ".env"
+if env_path.exists():
+    load_dotenv(env_path)
+    print(f"✅ 환경변수 파일 로딩 완료: {env_path}")
+else:
+    print(f"⚠️  .env 파일이 없습니다: {env_path}")
+    print("   .env.example 파일을 참고하여 .env 파일을 생성하세요.")
+
 try:
     import torch
     TORCH_AVAILABLE = True
@@ -39,8 +51,7 @@ class ProverbDifficultyConfig:
     DESCRIPTION: str = "속담 절반을 주고 나머지를 맞추는 게임의 난이도 분석 AI"
     DEBUG: bool = os.getenv("DEBUG", "True").lower() == "true"
     
-    # 현재 파일의 경로를 기준으로 프로젝트 루트 경로 설정
-    BASE_DIR: Path = Path(__file__).resolve().parent.parent.parent
+    # 프로젝트 루트 경로 설정 (이미 위에서 정의됨)
     
     # ==================== 속담 AI 모델 설정 ====================
     # 🚨 중요: jhgan/ko-sroberta-multitask 모델만 사용 (다른 모델 절대 금지!)
@@ -64,7 +75,7 @@ class ProverbDifficultyConfig:
     DB_HOST: str = os.getenv("DB_HOST", "localhost")
     DB_PORT: int = int(os.getenv("DB_PORT", "3306"))
     DB_USER: str = os.getenv("DB_USER", "root")
-    DB_PASSWORD: str = os.getenv("DB_PASSWORD", "0000")  # 데이터베이스 비밀번호
+    DB_PASSWORD: str = os.getenv("DB_PASSWORD", "")  # 환경변수에서 데이터베이스 비밀번호 로드
     DB_NAME: str = os.getenv("DB_NAME", "proverb_game")  # 속담 게임 전용 DB
     
     # 속담 테이블 설정
@@ -123,6 +134,13 @@ class ProverbDifficultyConfig:
     SECRET_KEY: str = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
     
+    # Hugging Face 토큰 (선택사항)
+    HF_TOKEN: Optional[str] = os.getenv("HF_TOKEN")
+    
+    # 외부 API 키들 (필요시 사용)
+    OPENAI_API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY")
+    GOOGLE_API_KEY: Optional[str] = os.getenv("GOOGLE_API_KEY")
+    
     def __init__(self):
         """
         설정 초기화 및 필요한 디렉토리 생성
@@ -156,6 +174,21 @@ class ProverbDifficultyConfig:
         for setting_name, setting_value in required_settings.items():
             if not setting_value:
                 raise ValueError(f"필수 설정값이 누락되었습니다: {setting_name}")
+        
+        # 보안 설정 검사
+        if self.SECRET_KEY == "your-secret-key-change-in-production":
+            print("⚠️  경고: SECRET_KEY가 기본값입니다. 보안을 위해 강력한 키로 변경하세요!")
+        
+        # 데이터베이스 연결 정보 검사
+        if not self.DB_PASSWORD:
+            print("⚠️  경고: 데이터베이스 비밀번호가 설정되지 않았습니다!")
+            print("   .env 파일에서 DB_PASSWORD를 설정하세요.")
+        
+        # 환경변수 파일 존재 여부 확인
+        env_file = BASE_DIR / ".env"
+        if not env_file.exists():
+            print("💡 팁: .env 파일을 생성하여 환경변수를 관리하세요!")
+            print(f"   예시: cp .env.example .env")
     
     def get_device_info(self) -> dict:
         """
@@ -197,6 +230,14 @@ class ProverbDifficultyConfig:
         print(f"🌐 API 서버: {self.API_HOST}:{self.API_PORT}")
         print(f"📁 모델 캐시: {self.MODEL_CACHE_DIR}")
         print(f"🎮 난이도 레벨: {len(self.PROVERB_DIFFICULTY_LEVELS)}단계")
+        
+        # 환경변수 파일 상태 표시
+        env_file = BASE_DIR / ".env"
+        if env_file.exists():
+            print(f"🔧 환경변수: .env 파일 사용 중")
+        else:
+            print(f"🔧 환경변수: 기본값 사용 중 (.env 파일 없음)")
+        
         print("=" * 70)
     
     def get_test_proverbs(self) -> List[str]:
